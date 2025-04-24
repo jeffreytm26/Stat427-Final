@@ -1,0 +1,12 @@
+---
+title: "Predicting Temperature Changes Over Time to Indicate Climate Trends"
+authors: Gracie Abrahams, Luke Carignan and Jeffrey Mann
+format: html
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r}
+library(tidyverse)
+```
+
