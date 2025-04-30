@@ -1,0 +1,528 @@
+---
+title: "sml-climate-eda"
+author: "Gracie Abrahams"
+format: html
+editor: visual
+---
+
+# Climate Change Through Classification Modeling
+
+## Can we classify extreme weather events using machine learning?
+
+Load necessary packages.
+
+```{r}
+library(tidyverse)
+library(lubridate)
+library(glmnet)
+library(pls)
+library(ggplot2)
+library(ISLR2)
+library(leaps)
+library(boot)
+library(class)
+```
+
+## Exploratory Data Analysis
+
+```{r}
+climate_data <- read.csv("/Users/Grace/Downloads/126a0a240271e60ebd5190100d9d5ec2/Climate-Data.csv")
+head(climate_data)
+```
+
+```{r}
+# Make sure valid_time is a datetime object
+climate_data$valid_time <- ymd_hms(climate_data$valid_time)
+
+# Filter between 2000 and 2025
+climate_data <- climate_data %>%
+  filter(year(valid_time) >= 2000, year(valid_time) <= 2025)
+
+# Check how much is left
+nrow(climate_data)
+
+```
+
+```{r}
+climate_data <- climate_data %>%
+  select(-sst)
+
+```
+
+```{r}
+climate_data <- climate_data %>%
+  mutate(
+    date = as.Date(valid_time),
+    year = year(valid_time),
+    month = month(valid_time),
+    day = day(valid_time),
+    hour = hour(valid_time)
+  )
+
+```
+
+```{r}
+climate_data <- climate_data %>%
+  mutate(
+    t2m_f = (t2m - 273.15) * 9/5 + 32,
+    d2m_f = (d2m - 273.15) * 9/5 + 32
+  )
+
+```
+
+```{r}
+avg_monthly_temp <- climate_data %>%
+  group_by(month) %>%
+  summarise(avg_temp_f = mean(t2m_f, na.rm = TRUE))
+
+print(avg_monthly_temp)
+
+```
+
+```{r}
+# Check missing values
+colSums(is.na(climate_data))
+
+# Drop or impute if needed (for now, drop rows with NAs)
+weather_clean <- climate_data %>% drop_na()
+
+```
+
+```{r}
+# Temperature distribution
+ggplot(weather_clean, aes(x = t2m_f)) +
+  geom_histogram(bins = 50, fill = "skyblue") +
+  labs(title = "Temperature (F) Distribution")
+
+# Precipitation
+ggplot(weather_clean, aes(x = tp)) +
+  geom_histogram(bins = 50, fill = "lightgreen") +
+  labs(title = "Precipitation Distribution")
+
+# Wind speed (calculated)
+weather_clean <- weather_clean %>%
+  mutate(wind_speed = sqrt(u10^2 + v10^2))
+
+ggplot(weather_clean, aes(x = wind_speed)) +
+  geom_histogram(bins = 50, fill = "salmon") +
+  labs(title = "Wind Speed Distribution")
+
+```
+
+```{r}
+ggplot(weather_clean, aes(x = valid_time, y = t2m_f)) +
+  geom_line(alpha = 0.3) +
+  labs(title = "Temperature Over Time")
+
+ggplot(weather_clean, aes(x = valid_time, y = tp)) +
+  geom_line(alpha = 0.3) +
+  labs(title = "Precipitation Over Time")
+
+```
+
+```{r}
+numeric_cols <- weather_clean %>%
+  select(t2m_f, d2m_f, msl, sp, wind_speed, tp)
+
+library(corrplot)
+corrplot(cor(numeric_cols), method = "circle")
+
+```
+
+```{r}
+summary(climate_data)
+
+
+```
+
+```{r}
+# Calculate total wind speed in m/s
+weather_clean <- weather_clean %>%
+  mutate(
+    wind_speed = sqrt(u10^2 + v10^2),  # Calculate total wind speed in m/s
+    wind_speed_kmh = wind_speed * 3.6   # Convert wind speed to km/h
+  )
+
+# Check the first few rows to confirm the calculation
+head(weather_clean)
+
+```
+
+```{r}
+# Calculate monthly average temperatures by year
+monthly_avg_temp <- climate_data %>%
+  group_by(year, month) %>%
+  summarise(avg_temp = mean(t2m_f, na.rm = TRUE))
+
+# Plot the monthly averages for each year
+ggplot(monthly_avg_temp, aes(x = year, y = avg_temp, color = factor(month))) +
+  geom_line() +
+  labs(title = "Average Monthly Temperature Over the Years",
+       x = "Year", y = "Average Temperature (°F)") +
+  theme_minimal() +
+  scale_color_brewer(palette = "Set3")
+
+```
+
+```{r}
+# Filter out 2025 (incomplete data)
+annual_avg_temp <- climate_data %>%
+  filter(year != 2025) %>%
+  group_by(year) %>%
+  summarise(avg_temp = mean(t2m_f, na.rm = TRUE))
+
+# Plot the annual temperature trends
+ggplot(annual_avg_temp, aes(x = year, y = avg_temp)) +
+  geom_line() +
+  labs(title = "Annual Average Temperature Trends (Excluding 2025)",
+       x = "Year", y = "Average Temperature (°F)") +
+  theme_minimal()
+
+
+```
+
+```{r}
+# Filter for June and December only
+june_december_data <- climate_data %>%
+  filter(month == 7 | month == 12)
+
+# Calculate average temperature for June and December across years
+june_december_avg_temp <- june_december_data %>%
+  group_by(year, month) %>%
+  summarise(avg_temp = mean(t2m_f, na.rm = TRUE))
+
+# Plot the temperature trends for June and December
+ggplot(june_december_avg_temp, aes(x = year, y = avg_temp, color = factor(month))) +
+  geom_line() +
+  labs(title = "Temperature Trends in June and December",
+       x = "Year", y = "Average Temperature (°F)") +
+  theme_minimal() +
+  scale_color_manual(values = c("blue", "red"), labels = c("June", "December"))
+
+```
+
+```{r}
+# Remove rows with missing values for temperature
+yearly_temp_stats <- climate_data %>%
+  filter(year != 2025) %>%
+  filter(!is.na(t2m_f)) %>%  # Remove rows with missing temperature data
+  group_by(year) %>%
+  summarise(
+    avg_temp = mean(t2m_f, na.rm = TRUE),
+    min_temp = min(t2m_f, na.rm = TRUE),
+    max_temp = max(t2m_f, na.rm = TRUE)
+  )
+
+# Check if any missing values were present
+summary(yearly_temp_stats)
+
+# Plot the min, max, and avg temperature trends by year
+ggplot(yearly_temp_stats, aes(x = factor(year))) +
+  geom_bar(aes(y = avg_temp), stat = "identity", fill = "lightblue", alpha = 0.6) +
+  geom_line(aes(y = min_temp), color = "blue", size = 1, group = 1) +
+  geom_line(aes(y = max_temp), color = "red", size = 1, group = 1) +
+  labs(title = "Yearly Temperature Trends (Min, Max, and Average)",
+       x = "Year", y = "Temperature (°F)") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  scale_y_continuous(breaks = seq(min(yearly_temp_stats$min_temp), max(yearly_temp_stats$max_temp), by = 2))  # Adjust y-axis dynamically
+
+```
+
+```{r}
+summary(weather_clean$tp)
+```
+
+## Extreme Weather Encoding / Classification
+
+```{r}
+weather_classified <- weather_clean %>%
+  mutate(
+    extreme_type = case_when(
+      t2m_f >= 90 ~ "Extreme Heat",
+      t2m_f <= 10 ~ "Extreme Cold",
+      wind_speed_kmh >= 30 ~ "High Wind",
+      tp > 0.005 ~ "Heavy Precipitation",
+      TRUE ~ "Normal"
+    )
+  )
+
+```
+
+```{r}
+
+# Count the number of each extreme type by year
+extreme_counts <- weather_classified %>%
+  group_by(year, extreme_type) %>%
+  summarize(count = n(), .groups = 'drop')
+
+# Plot
+ggplot(extreme_counts, aes(x = year, y = count, fill = extreme_type)) +
+  geom_bar(stat = "identity", position = "stack") +
+  scale_fill_brewer(palette = "Set1") +
+  labs(
+    title = "Extreme Weather Events Per Year",
+    x = "Year",
+    y = "Number of Events",
+    fill = "Extreme Weather Type"
+  ) +
+  theme_minimal()
+
+```
+
+```{r}
+ # Only keep rows that are classified as extreme (not "normal")
+extreme_only <- weather_classified %>%
+  filter(extreme_type != "Normal")
+
+# Count by year and type
+extreme_counts <- extreme_only %>%
+  group_by(year, extreme_type) %>%
+  summarize(count = n(), .groups = 'drop')
+
+# Plot only extreme events
+ggplot(extreme_counts, aes(x = year, y = count, fill = extreme_type)) +
+  geom_bar(stat = "identity", position = "stack") +
+  scale_fill_brewer(palette = "Set1") +
+  labs(
+    title = "Extreme Weather Events Per Year (Excludes Normal)",
+    x = "Year",
+    y = "Number of Events",
+    fill = "Extreme Type"
+  ) +
+  theme_minimal()
+
+```
+
+```{r}
+# Total count of each extreme weather type
+overall_extreme_summary <- extreme_only %>%
+  group_by(extreme_type) %>%
+  summarize(total_count = n(), .groups = "drop")
+
+# View the summary
+overall_extreme_summary
+
+
+```
+
+```{r}
+
+# Count number of extreme events per year
+extreme_counts_by_year <- weather_classified %>%
+  filter(extreme_type != "Normal") %>%
+  group_by(year, extreme_type) %>%
+  summarise(count = n(), .groups = "drop")
+
+# Plot
+ggplot(extreme_counts_by_year, aes(x = year, y = count, fill = extreme_type)) +
+  geom_col(position = "dodge") +
+  labs(
+    title = "Extreme Weather Events by Year",
+    x = "Year",
+    y = "Count of Extreme Events",
+    fill = "Extreme Type"
+  ) +
+  theme_minimal()
+
+```
+
+```{r}
+# Encoding 0 and 1 for each extreme weather type
+weather_classified_binary <- weather_classified %>%
+  mutate(
+    is_extreme_cold = ifelse(extreme_type == "Extreme Cold", 1, 0),
+    is_extreme_heat = ifelse(extreme_type == "Extreme Heat", 1, 0),
+    is_heavy_precipitation = ifelse(extreme_type == "Heavy Precipitation", 1, 0),
+    is_high_wind = ifelse(extreme_type == "High Wind", 1, 0),
+    is_normal = ifelse(extreme_type == "Normal", 1, 0)  # Optional: If you want to track normal events too
+  )
+
+# Summarize the data to count the number of occurrences for each weather classification
+extreme_summary <- weather_classified_binary %>%
+  summarise(
+    Extreme_Cold = sum(is_extreme_cold),
+    Extreme_Heat = sum(is_extreme_heat),
+    Heavy_Precipitation = sum(is_heavy_precipitation),
+    High_Wind = sum(is_high_wind),
+    Normal = sum(is_normal)
+  )
+
+# Print the summarized table
+extreme_summary
+
+```
+
+## Method 1: KNN Modeling
+
+```{r}
+
+weather_data <- weather_classified_binary 
+
+
+weather_data$extreme_type <- as.factor(weather_data$extreme_type)
+
+X <- weather_data %>%
+  select(where(is.numeric))  
+
+y <- weather_data$extreme_type
+
+set.seed(123)
+train_idx <- sample(nrow(weather_data), 0.5 * nrow(weather_data))
+Xtrain <- X[train_idx, ]
+Xtest <- X[-train_idx, ]
+ytrain <- y[train_idx]
+ytest <- y[-train_idx]
+
+
+```
+
+```{r}
+knn_pred <- knn(train = Xtrain, test = Xtest, cl = ytrain, k = 3)
+```
+
+```{r}
+
+conf_matrix <- table(Predicted = knn_pred, Actual = ytest)
+
+sensitivity_per_class <- diag(conf_matrix) / rowSums(conf_matrix)
+specificity_per_class <- (rowSums(conf_matrix) - diag(conf_matrix)) / rowSums(conf_matrix)
+
+balanced_accuracy <- mean((sensitivity_per_class + specificity_per_class) / 2)
+print(paste("Balanced Accuracy:", round(balanced_accuracy, 2)))
+
+```
+
+```{r}
+accuracy_knn <- sum(diag(conf_matrix)) / sum(conf_matrix)
+round(accuracy_knn, 4)
+
+
+```
+
+Make 2 groups instead of each extreme weather classification (Normal & Extreme Weather)
+
+Use KNN (K=3) to classify extreme weather
+
+```{r}
+weather_classified_binary$extreme_weather_binary <- ifelse(weather_classified_binary$extreme_type %in% 
+    c("Extreme Cold", "Extreme Heat", "Heavy Precipitation", "High Wind"), "Extreme Weather", "Normal")
+
+
+y <- weather_classified_binary$extreme_weather_binary
+
+
+set.seed(123)
+train_idx <- sample(nrow(weather_classified_binary), 0.5 * nrow(weather_classified_binary))
+Xtrain <- X[train_idx, ]
+Xtest <- X[-train_idx, ]
+ytrain <- y[train_idx]
+ytest <- y[-train_idx]
+
+knn_pred <- knn(train = Xtrain, test = Xtest, cl = ytrain, k = 3)
+
+
+```
+
+```{r}
+conf_matrix <- table(Predicted = knn_pred, Actual = ytest)
+conf_matrix
+```
+
+```{r}
+accuracy <- sum(knn_pred == ytest) / length(ytest)
+accuracy
+```
+
+**True Positives (TP)** = 1246 (correctly predicted extreme)
+
+**False Positives (FP)** = 298 (predicted extreme, actually normal)
+
+**False Negatives (FN)** = 1400 (predicted normal, actually extreme)
+
+**True Negatives (TN)** = 107996 (correctly predicted normal)
+
+Here we see an extremely high accuracy, which is due to a class imbalance. Because of this, we should try again with more balanced classes.
+
+```{r}
+#Undersample 'Normal' to match number of 'Extreme Weather' cases
+normal <- weather_classified_binary %>% filter(extreme_weather_binary == "Normal")
+extreme <- weather_classified_binary %>% filter(extreme_weather_binary == "Extreme Weather")
+
+set.seed(123)
+normal_sample <- normal %>% sample_n(nrow(extreme))
+
+balanced_data <- bind_rows(extreme, normal_sample)
+
+```
+
+```{r}
+#KNN Model wih balanced data 
+
+X <- balanced_data %>% select(where(is.numeric))
+y <- balanced_data$extreme_weather_binary
+
+set.seed(123)
+train_idx <- sample(nrow(balanced_data), 0.7 * nrow(balanced_data))
+Xtrain <- X[train_idx, ]
+Xtest <- X[-train_idx, ]
+ytrain <- y[train_idx]
+ytest <- y[-train_idx]
+
+
+knn_pred <- knn(train = Xtrain, test = Xtest, cl = ytrain, k = 3)
+
+conf_matrix <- table(Predicted = knn_pred, Actual = ytest)
+print(conf_matrix)
+
+accuracy <- sum(knn_pred == ytest) / length(ytest)
+accuracy
+
+```
+
+```{r}
+#Find best K
+classification_rates <- rep(NA, 20)
+
+for (k in 1:20) {
+  knn_predictions <- knn(train = Xtrain, test = Xtest, cl = ytrain, k = k)
+  classification_rates[k] <- mean(knn_predictions == ytest)
+
+}
+
+
+k_3_rate <- classification_rates[3]
+
+
+better_k <- which(classification_rates > k_3_rate)
+
+
+classification_rates
+
+```
+
+```{r}
+plot(1:20, classification_rates, type = "b", pch = 18, col = "blue",
+     xlab = "K Value", ylab = "Classification Rate",
+     main = "K vs. Classification Rate")
+```
+
+Here we see that as we increase K, the classification rate decreases, which we can expect due to what we have referred to as the "curse of dimensionality" which is when the number of features p is large there tends to be a deterioration in the performance of KNN.
+
+## Method 2: Logistic Regression
+
+```{r}
+
+```
+
+## Method 3: QDA/LDA
+
+```{r}
+
+```
+
+## Evaluation and Cross Validation
+
+```{r}
+
+```
