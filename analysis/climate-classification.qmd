@@ -26,7 +26,8 @@ library(class)
 ## Exploratory Data Analysis
 
 ```{r}
-climate_data <- read.csv("/Users/Grace/Downloads/126a0a240271e60ebd5190100d9d5ec2/Climate-Data.csv")
+setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
+climate_data <- read.csv("../data/Climate-Data.csv")
 head(climate_data)
 ```
 
@@ -378,7 +379,9 @@ ytest <- y[-train_idx]
 ```
 
 ```{r}
+library(FNN)
 knn_pred <- knn(train = Xtrain, test = Xtest, cl = ytrain, k = 3)
+
 ```
 
 ```{r}
@@ -512,17 +515,225 @@ Here we see that as we increase K, the classification rate decreases, which we c
 ## Method 2: Logistic Regression
 
 ```{r}
+# Logistic regression model to predict extreme weather (binary)
+logit_data <- weather_classified_binary %>%
+  mutate(extreme_weather_binary = factor(extreme_weather_binary))
+
+X <- logit_data %>% 
+  select(t2m_f, d2m_f, wind_speed_kmh, msl, sp, tp)
+
+y <- logit_data$extreme_weather_binary
+
+logit_df <- cbind(X, extreme_weather_binary = y)
+
+logit_model <- glm(extreme_weather_binary ~ ., data = logit_df, family = binomial)
+
+summary(logit_model)
 
 ```
+
+```{r}
+# Generate predictions and evaluate model accuracy
+logit_probs <- predict(logit_model, type = "response")
+logit_preds <- ifelse(logit_probs > 0.5, "Extreme Weather", "Normal")
+logit_preds <- factor(logit_preds, levels = levels(y))
+
+conf_matrix <- table(Predicted = logit_preds, Actual = y)
+conf_matrix
+
+mean(logit_preds == y)
+```
+
+The logistic regression model shows significant class imbalance, with the model predicting nearly all cases as "Extreme Weather." Despite strong statistical significance in the coefficients, the overall accuracy is only 1.5%, indicating poor predictive performance. This suggests that the model is not effectively distinguishing between normal and extreme weather, and rebalancing the dataset or applying class weights is necessary for better classification.
+
+```{r}
+# Rebalance dataset by downsampling the majority class
+extreme <- logit_df %>% filter(extreme_weather_binary == "Extreme Weather")
+normal <- logit_df %>% filter(extreme_weather_binary == "Normal") %>% sample_n(nrow(extreme))
+balanced_df <- bind_rows(extreme, normal)
+
+# Fit logistic regression model on balanced data
+logit_model_bal <- glm(extreme_weather_binary ~ ., data = balanced_df, family = binomial)
+
+# Generate predictions and evaluate
+logit_probs <- predict(logit_model_bal, type = "response")
+logit_preds <- ifelse(logit_probs > 0.5, "Extreme Weather", "Normal")
+logit_preds <- factor(logit_preds, levels = levels(balanced_df$extreme_weather_binary))
+conf_matrix <- table(Predicted = logit_preds, Actual = balanced_df$extreme_weather_binary)
+conf_matrix
+mean(logit_preds == balanced_df$extreme_weather_binary)
+
+```
+
+After rebalancing the dataset to address class imbalance, the logistic regression model still performed poorly, with only 6.4% accuracy. The confusion matrix shows that the model continues to misclassify most observations, suggesting that the relationship between predictors and extreme weather is likely non-linear or too complex for logistic regression to capture. This indicates that more flexible models, such as QDA, LDA, or tree-based methods, may be better suited for this classification task.
 
 ## Method 3: QDA/LDA
 
 ```{r}
+library(MASS)
 
+# Fit LDA
+lda_model <- lda(extreme_weather_binary ~ ., data = balanced_df)
+lda_preds <- predict(lda_model)$class
+lda_acc <- mean(lda_preds == balanced_df$extreme_weather_binary)
+
+# Fit QDA
+qda_model <- qda(extreme_weather_binary ~ ., data = balanced_df)
+qda_preds <- predict(qda_model)$class
+qda_acc <- mean(qda_preds == balanced_df$extreme_weather_binary)
+
+# Output accuracies
+lda_acc
+qda_acc
+
+```
+
+The LDA and QDA models performed significantly better than logistic regression, with classification accuracies of approximately **91.97%** and **93.99%**, respectively. This improvement suggests that the relationship between features and extreme weather events is non-linear and better captured by flexible, distribution-based models like LDA and QDA. These results indicate that QDA, in particular, may be a strong candidate for classifying extreme weather in this dataset.
+
+## Linear Regression
+
+```{r}
+# Select Data
+regression_df <- weather_clean %>%
+  dplyr::select(t2m, month, d2m_f, wind_speed_kmh, msl, sp, tp) %>%
+  drop_na()
+```
+
+```{r}
+lm_model <- lm(t2m ~ ., data = regression_df)
+summary(lm_model)
+```
+
+The linear regression model achieved a high R² of 0.9165, indicating that over 91% of the variation in temperature (`t2m`) is explained by the selected predictors. All predictors were statistically significant, and the residual standard error was relatively low at 2.93, suggesting a good overall fit.
+
+## Polynomial Regression
+
+```{r}
+poly_model <- lm(t2m ~ poly(month, 3), data = regression_df)
+summary(poly_model)
+```
+
+The polynomial regression model used a 3rd-degree transformation of the `month` variable to model seasonal trends in temperature. While all terms were significant, the R² was lower at 0.6622, and the residual error was larger compared to the full linear model. This suggests that `month` alone, even with polynomial terms, is insufficient for accurate temperature prediction.
+
+## Ridge/Lasso
+
+```{r}
+library(glmnet)
+
+# Prepare data
+X <- model.matrix(t2m ~ ., regression_df)[, -1]
+y <- regression_df$t2m
+
+# Ridge Regression (alpha = 0)
+cv_ridge <- cv.glmnet(X, y, alpha = 0)
+ridge_best_lambda <- cv_ridge$lambda.min
+ridge_preds <- predict(cv_ridge, s = ridge_best_lambda, newx = X)
+ridge_rmse <- sqrt(mean((ridge_preds - y)^2))
+ridge_rmse
+
+# Lasso Regression (alpha = 1)
+cv_lasso <- cv.glmnet(X, y, alpha = 1)
+lasso_best_lambda <- cv_lasso$lambda.min
+lasso_preds <- predict(cv_lasso, s = lasso_best_lambda, newx = X)
+lasso_rmse <- sqrt(mean((lasso_preds - y)^2))
+lasso_rmse
+
+# Coefficients
+coef(cv_ridge, s = "lambda.min")
+coef(cv_lasso, s = "lambda.min")
+
+```
+
+Ridge regression, which shrinks coefficients but retains all predictors, produced an RMSE of 4.65. While this is worse than the linear and lasso models, ridge was likely affected by collinearity among predictors and over-smoothing due to the penalty term.
+
+Lasso regression yielded the best performance among the penalized methods, with an RMSE of 2.94 — very close to the unregularized linear model. It also performed variable selection, shrinking some coefficients more aggressively (e.g., `tp`) while still retaining key predictors, making it a strong choice for both accuracy and interpretability.
+
+## Regression Models
+
+```{r}
+library(glmnet)
+library(ggplot2)
+
+# Prepare data
+regression_df <- weather_clean %>%
+  dplyr::select(t2m, month, d2m_f, wind_speed_kmh, msl, sp, tp) %>%
+  drop_na()
+
+X <- model.matrix(t2m ~ ., regression_df)[, -1]
+y <- regression_df$t2m
+
+# 1. Linear Regression
+lm_model <- lm(t2m ~ ., data = regression_df)
+lm_preds <- predict(lm_model)
+
+# 2. Polynomial Regression (month as poly term)
+poly_model <- lm(t2m ~ poly(month, 3), data = regression_df)
+poly_preds <- predict(poly_model)
+
+# 3. Ridge Regression
+cv_ridge <- cv.glmnet(X, y, alpha = 0)
+ridge_preds <- predict(cv_ridge, s = "lambda.min", newx = X)
+
+# 4. Lasso Regression
+cv_lasso <- cv.glmnet(X, y, alpha = 1)
+lasso_preds <- predict(cv_lasso, s = "lambda.min", newx = X)
+
+# Create long-format dataframe for plotting
+plot_df <- data.frame(
+  Actual = y,
+  Linear = lm_preds,
+  Polynomial = poly_preds,
+  Ridge = as.vector(ridge_preds),
+  Lasso = as.vector(lasso_preds)
+) %>%
+  pivot_longer(-Actual, names_to = "Model", values_to = "Predicted")
+
+# Plot predicted vs. actual
+ggplot(plot_df, aes(x = Actual, y = Predicted)) +
+  geom_point(alpha = 0.3, size = 0.8) +
+  geom_abline(slope = 1, intercept = 0, color = "red", linetype = "dashed") +
+  facet_wrap(~Model, scales = "free") +
+  labs(title = "Predicted vs. Actual Temperature by Model",
+       x = "Actual Temperature (K)", y = "Predicted Temperature (K)") +
+  theme_minimal()
 ```
 
 ## Evaluation and Cross Validation
 
 ```{r}
 
+# Classification model comparison
+classification_results <- data.frame(
+  Model = c("KNN (Unbalanced)", "KNN (Balanced)", "Logistic Regression", "LDA", "QDA"),
+  Accuracy = c(0.985, 0.888, 0.064, 0.9197, 0.9399),
+  Balanced_Accuracy = c(0.50, NA, NA, NA, NA),
+  Notes = c(
+    "Overestimates due to class imbalance",
+    "More realistic; tuned with CV",
+    "Underperforms despite significance",
+    "Strong separation with linear boundaries",
+    "Best classifier; handles non-linearity"
+  )
+)
+
+kable(classification_results, caption = "Classification Model Comparison")
+
+# Regression model comparison
+regression_results <- data.frame(
+  Model = c("Linear Regression", "Polynomial Regression", "Ridge Regression", "Lasso Regression"),
+  RMSE = c(2.93, 5.88, 4.65, 2.94),
+  Adjusted_R2 = c(0.9165, 0.6622, NA, NA),
+  Notes = c(
+    "Best overall fit; all predictors significant",
+    "Captures seasonality; limited features",
+    "Regularized; retains all predictors",
+    "Sparse solution; similar to linear"
+  )
+)
+
+kable(regression_results, caption = "Regression Model Comparison")
 ```
+
+We evaluated multiple classification methods to predict extreme weather events, including K-Nearest Neighbors (KNN), logistic regression, LDA, and QDA. KNN initially appeared highly accurate (\>98%), but deeper inspection revealed this was due to severe class imbalance. After balancing the data, KNN's performance became more realistic, achieving \~88% accuracy and a balanced accuracy of 0.5. Logistic regression struggled even after rebalancing, with only 6.4% accuracy, indicating it could not capture complex decision boundaries. LDA and QDA, by contrast, performed significantly better, with classification accuracies of 91.97% and 93.99% respectively, showing that distribution-based models can better handle the underlying structure of extreme weather classification. Cross-validation was used to select the optimal number of neighbors in KNN and to ensure fair model comparison. These results highlight the importance of both class balance and cross-validation in evaluating classifier performance in imbalanced real-world datasets.
+
+To evaluate model performance, we used RMSE (Root Mean Squared Error) and adjusted R² across four regression approaches: linear, polynomial, ridge, and lasso. The standard linear model performed best overall, with an adjusted R² of 0.9165 and a low residual error, indicating a strong linear relationship between temperature and the selected predictors. Polynomial regression, despite modeling seasonal trends with `month`, showed weaker performance due to its limited feature scope. Ridge regression used cross-validation to select the optimal penalty parameter (`λ`), but still underperformed with an RMSE of 4.65. Lasso regression also used cross-validation for tuning and achieved a much lower RMSE of 2.94 by automatically selecting relevant features. These results underscore the effectiveness of regularized models when handling collinearity or when model simplicity is preferred. Cross-validation played a key role in objectively comparing flexibility and prediction error, helping avoid overfitting.
