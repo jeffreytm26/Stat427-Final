@@ -12,6 +12,7 @@ editor: visual
 Load necessary packages.
 
 ```{r}
+library(dplyr)
 library(tidyverse)
 library(lubridate)
 library(glmnet)
@@ -19,8 +20,11 @@ library(pls)
 library(ggplot2)
 library(ISLR2)
 library(leaps)
+library(corrplot)
 library(boot)
 library(class)
+library(MASS)
+library(GGally)
 ```
 
 ## Exploratory Data Analysis
@@ -32,21 +36,20 @@ head(climate_data)
 ```
 
 ```{r}
-# Make sure valid_time is a datetime object
+
 climate_data$valid_time <- ymd_hms(climate_data$valid_time)
 
 # Filter between 2000 and 2025
 climate_data <- climate_data %>%
   filter(year(valid_time) >= 2000, year(valid_time) <= 2025)
 
-# Check how much is left
 nrow(climate_data)
 
 ```
 
 ```{r}
-climate_data <- climate_data %>%
-  select(-sst)
+library(dplyr)
+climate_data <- climate_data %>% dplyr::select(-sst)
 
 ```
 
@@ -76,15 +79,14 @@ avg_monthly_temp <- climate_data %>%
   group_by(month) %>%
   summarise(avg_temp_f = mean(t2m_f, na.rm = TRUE))
 
-print(avg_monthly_temp)
+avg_monthly_temp
 
 ```
 
 ```{r}
-# Check missing values
+
 colSums(is.na(climate_data))
 
-# Drop or impute if needed (for now, drop rows with NAs)
 weather_clean <- climate_data %>% drop_na()
 
 ```
@@ -123,9 +125,8 @@ ggplot(weather_clean, aes(x = valid_time, y = tp)) +
 
 ```{r}
 numeric_cols <- weather_clean %>%
-  select(t2m_f, d2m_f, msl, sp, wind_speed, tp)
+  dplyr::select(t2m_f, d2m_f, msl, sp, wind_speed, tp)
 
-library(corrplot)
 corrplot(cor(numeric_cols), method = "circle")
 
 ```
@@ -166,7 +167,7 @@ ggplot(monthly_avg_temp, aes(x = year, y = avg_temp, color = factor(month))) +
 ```
 
 ```{r}
-# Filter out 2025 (incomplete data)
+# Filter out 2025 
 annual_avg_temp <- climate_data %>%
   filter(year != 2025) %>%
   group_by(year) %>%
@@ -184,6 +185,7 @@ ggplot(annual_avg_temp, aes(x = year, y = avg_temp)) +
 
 ```{r}
 # Filter for June and December only
+# This is to check that data looks accurate for warm/cool months typically to ensure we have correct coordinates
 june_december_data <- climate_data %>%
   filter(month == 7 | month == 12)
 
@@ -206,7 +208,7 @@ ggplot(june_december_avg_temp, aes(x = year, y = avg_temp, color = factor(month)
 # Remove rows with missing values for temperature
 yearly_temp_stats <- climate_data %>%
   filter(year != 2025) %>%
-  filter(!is.na(t2m_f)) %>%  # Remove rows with missing temperature data
+  filter(!is.na(t2m_f)) %>%  
   group_by(year) %>%
   summarise(
     avg_temp = mean(t2m_f, na.rm = TRUE),
@@ -226,7 +228,7 @@ ggplot(yearly_temp_stats, aes(x = factor(year))) +
        x = "Year", y = "Temperature (°F)") +
   theme_minimal() +
   theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
-  scale_y_continuous(breaks = seq(min(yearly_temp_stats$min_temp), max(yearly_temp_stats$max_temp), by = 2))  # Adjust y-axis dynamically
+  scale_y_continuous(breaks = seq(min(yearly_temp_stats$min_temp), max(yearly_temp_stats$max_temp), by = 2)) 
 
 ```
 
@@ -272,7 +274,7 @@ ggplot(extreme_counts, aes(x = year, y = count, fill = extreme_type)) +
 ```
 
 ```{r}
- # Only keep rows that are classified as extreme (not "normal")
+ # Only keep rows that are classified as extreme, normal has class imbalance
 extreme_only <- weather_classified %>%
   filter(extreme_type != "Normal")
 
@@ -336,7 +338,7 @@ weather_classified_binary <- weather_classified %>%
     is_extreme_heat = ifelse(extreme_type == "Extreme Heat", 1, 0),
     is_heavy_precipitation = ifelse(extreme_type == "Heavy Precipitation", 1, 0),
     is_high_wind = ifelse(extreme_type == "High Wind", 1, 0),
-    is_normal = ifelse(extreme_type == "Normal", 1, 0)  # Optional: If you want to track normal events too
+    is_normal = ifelse(extreme_type == "Normal", 1, 0)  
   )
 
 # Summarize the data to count the number of occurrences for each weather classification
@@ -349,7 +351,6 @@ extreme_summary <- weather_classified_binary %>%
     Normal = sum(is_normal)
   )
 
-# Print the summarized table
 extreme_summary
 
 ```
@@ -364,7 +365,7 @@ weather_data <- weather_classified_binary
 weather_data$extreme_type <- as.factor(weather_data$extreme_type)
 
 X <- weather_data %>%
-  select(where(is.numeric))  
+  dplyr::select(where(is.numeric))  
 
 y <- weather_data$extreme_type
 
@@ -379,20 +380,21 @@ ytest <- y[-train_idx]
 ```
 
 ```{r}
+# To speed up runtime
 library(FNN)
 knn_pred <- knn(train = Xtrain, test = Xtest, cl = ytrain, k = 3)
 
 ```
 
 ```{r}
-
+# Try balancing
 conf_matrix <- table(Predicted = knn_pred, Actual = ytest)
 
 sensitivity_per_class <- diag(conf_matrix) / rowSums(conf_matrix)
 specificity_per_class <- (rowSums(conf_matrix) - diag(conf_matrix)) / rowSums(conf_matrix)
 
 balanced_accuracy <- mean((sensitivity_per_class + specificity_per_class) / 2)
-print(paste("Balanced Accuracy:", round(balanced_accuracy, 2)))
+round(balanced_accuracy, 2)
 
 ```
 
@@ -462,7 +464,7 @@ balanced_data <- bind_rows(extreme, normal_sample)
 ```{r}
 #KNN Model wih balanced data 
 
-X <- balanced_data %>% select(where(is.numeric))
+X <- balanced_data %>% dplyr::select(where(is.numeric))
 y <- balanced_data$extreme_weather_binary
 
 set.seed(123)
@@ -475,8 +477,8 @@ ytest <- y[-train_idx]
 
 knn_pred <- knn(train = Xtrain, test = Xtest, cl = ytrain, k = 3)
 
-conf_matrix <- table(Predicted = knn_pred, Actual = ytest)
-print(conf_matrix)
+conf_matrix_knn <- table(Predicted = knn_pred, Actual = ytest)
+conf_matrix_knn
 
 accuracy <- sum(knn_pred == ytest) / length(ytest)
 accuracy
@@ -512,15 +514,30 @@ plot(1:20, classification_rates, type = "b", pch = 18, col = "blue",
 
 Here we see that as we increase K, the classification rate decreases, which we can expect due to what we have referred to as the "curse of dimensionality" which is when the number of features p is large there tends to be a deterioration in the performance of KNN.
 
+```{r}
+knn_tp <- conf_matrix_knn["Extreme Weather", "Extreme Weather"]
+knn_tn <- conf_matrix_knn["Normal", "Normal"]
+knn_fp <- conf_matrix_knn["Extreme Weather", "Normal"]
+knn_fn <- conf_matrix_knn["Normal", "Extreme Weather"]
+
+knn_precision <- knn_tp / (knn_tp + knn_fp)
+knn_recall <- knn_tp / (knn_tp + knn_fn)
+knn_f1 <- 2 * (knn_precision * knn_recall) / (knn_precision + knn_recall)
+
+knn_recall
+knn_precision
+knn_f1
+```
+
 ## Method 2: Logistic Regression
 
 ```{r}
-# Logistic regression model to predict extreme weather (binary)
+# Logistic regression model to predict extreme weather 
 logit_data <- weather_classified_binary %>%
   mutate(extreme_weather_binary = factor(extreme_weather_binary))
 
 X <- logit_data %>% 
-  select(t2m_f, d2m_f, wind_speed_kmh, msl, sp, tp)
+  dplyr::select(t2m_f, d2m_f, wind_speed_kmh, msl, sp, tp)
 
 y <- logit_data$extreme_weather_binary
 
@@ -559,25 +576,86 @@ logit_model_bal <- glm(extreme_weather_binary ~ ., data = balanced_df, family = 
 logit_probs <- predict(logit_model_bal, type = "response")
 logit_preds <- ifelse(logit_probs > 0.5, "Extreme Weather", "Normal")
 logit_preds <- factor(logit_preds, levels = levels(balanced_df$extreme_weather_binary))
-conf_matrix <- table(Predicted = logit_preds, Actual = balanced_df$extreme_weather_binary)
-conf_matrix
+conf_matrix_logit <- table(Predicted = logit_preds, Actual = balanced_df$extreme_weather_binary)
+conf_matrix_logit
 mean(logit_preds == balanced_df$extreme_weather_binary)
 
 ```
 
+```{r}
+logit_tp <- conf_matrix_logit["Extreme Weather", "Extreme Weather"]
+logit_tn <- conf_matrix_logit["Normal", "Normal"]
+logit_fp <- conf_matrix_logit["Extreme Weather", "Normal"]
+logit_fn <- conf_matrix_logit["Normal", "Extreme Weather"]
+
+logit_precision <- logit_tp / (logit_tp + logit_fp)
+logit_recall <- logit_tp / (logit_tp + logit_fn)
+logit_f1 <- 2 * (logit_precision * logit_recall) / (logit_precision + logit_recall)
+
+logit_recall
+logit_precision
+logit_f1
+```
+
 After rebalancing the dataset to address class imbalance, the logistic regression model still performed poorly, with only 6.4% accuracy. The confusion matrix shows that the model continues to misclassify most observations, suggesting that the relationship between predictors and extreme weather is likely non-linear or too complex for logistic regression to capture. This indicates that more flexible models, such as QDA, LDA, or tree-based methods, may be better suited for this classification task.
+
+```{r}
+#ROC Curve and Error Evaluation 
+prob <- predict(logit_model_bal, type = "response")
+actual <- ifelse(balanced_df$extreme_weather_binary == "Extreme Weather", 1, 0)
+
+
+threshold <- seq(0, 1, 0.01)
+TPR <- FPR <- err.rate <- rep(0, length(threshold))
+
+
+for (i in seq_along(threshold)) {
+  Yhat <- ifelse(prob >= threshold[i], 1, 0)
+  
+  err.rate[i] <- mean(Yhat != actual)
+  
+  TPR[i] <- sum(Yhat == 1 & actual == 1) / sum(actual == 1)
+  FPR[i] <- sum(Yhat == 1 & actual == 0) / sum(actual == 0)
+}
+
+
+ggplot(tibble(threshold, err.rate), aes(threshold, err.rate)) + 
+  geom_point() +
+  labs(x = "Threshold", y = "Error Rate", title = "Error Rate vs. Threshold") +
+  theme_minimal()
+
+
+best_threshold <- threshold[which.min(err.rate)]
+worst_threshold <- threshold[which.max(err.rate)]
+
+best_TPR <- TPR[which.min(err.rate)]
+best_FPR <- FPR[which.min(err.rate)]
+worst_TPR <- TPR[which.max(err.rate)]
+worst_FPR <- FPR[which.max(err.rate)]
+
+
+ggplot(tibble(TPR, FPR), aes(FPR, TPR)) + 
+  geom_point() + 
+  geom_abline(color = "red", lty = 2) +
+  labs(x = "False Positive Rate", y = "True Positive Rate", title = "ROC Curve") +
+  theme_minimal()
+
+best_threshold
+
+```
+
+As we mentioned before, and reemphasized by what we see here with the ROC curve and error rate graphs, it does not seem Logistic Regression is a strong method to fit our data. Especially given this upside own U shape we see, that possibly suggests that the relationship between the predictors and the outcome is more complex than logistic regression can handle. We may need more flexible models that can capture this data.
 
 ## Method 3: QDA/LDA
 
 ```{r}
-library(MASS)
 
-# Fit LDA
+# LDA
 lda_model <- lda(extreme_weather_binary ~ ., data = balanced_df)
 lda_preds <- predict(lda_model)$class
 lda_acc <- mean(lda_preds == balanced_df$extreme_weather_binary)
 
-# Fit QDA
+# QDA
 qda_model <- qda(extreme_weather_binary ~ ., data = balanced_df)
 qda_preds <- predict(qda_model)$class
 qda_acc <- mean(qda_preds == balanced_df$extreme_weather_binary)
@@ -588,7 +666,145 @@ qda_acc
 
 ```
 
-The LDA and QDA models performed significantly better than logistic regression, with classification accuracies of approximately **91.97%** and **93.99%**, respectively. This improvement suggests that the relationship between features and extreme weather events is non-linear and better captured by flexible, distribution-based models like LDA and QDA. These results indicate that QDA, in particular, may be a strong candidate for classifying extreme weather in this dataset.
+The LDA and QDA models performed significantly better than logistic regression, with classification accuracies of approximately **91.97%** and **93.99%**, respectively. This improvement suggests that the relationship between features and extreme weather events is non-linear and better captured by flexible, distribution-based models like LDA and QDA. These results indicate that QDA, in particular, may be a strong candidate for classifying extreme weather in this dataset. This aligns with our previous findings, given that QDA is a more flexible model and may be able to capture our data better than other models.
+
+```{r}
+# GGpairs 
+ggpairs(balanced_df, columns = 1:(ncol(balanced_df)-1), 
+        aes(color = extreme_weather_binary, alpha = 0.5))
+
+```
+
+```{r}
+# Confusion Matrices for LDA And QDA
+lda_conf_matrix <- table(Predicted = lda_preds, Actual = balanced_df$extreme_weather_binary)
+lda_conf_matrix
+
+qda_conf_matrix <- table(Predicted = qda_preds, Actual = balanced_df$extreme_weather_binary)
+qda_conf_matrix
+
+```
+
+```{r}
+#More metrics
+lda_tp <- lda_conf_matrix["Extreme Weather", "Extreme Weather"]
+lda_tn <- lda_conf_matrix["Normal", "Normal"]
+lda_fp <- lda_conf_matrix["Extreme Weather", "Normal"]
+lda_fn <- lda_conf_matrix["Normal", "Extreme Weather"]
+
+lda_precision <- lda_tp / (lda_tp + lda_fp)
+lda_recall <- lda_tp / (lda_tp + lda_fn)
+lda_f1 <- 2 * (lda_precision * lda_recall) / (lda_precision + lda_recall)
+
+
+qda_tp <- qda_conf_matrix["Extreme Weather", "Extreme Weather"]
+qda_tn <- qda_conf_matrix["Normal", "Normal"]
+qda_fp <- qda_conf_matrix["Extreme Weather", "Normal"]
+qda_fn <- qda_conf_matrix["Normal", "Extreme Weather"]
+
+qda_precision <- qda_tp / (qda_tp + qda_fp)
+qda_recall <- qda_tp / (qda_tp + qda_fn)
+qda_f1 <- 2 * (qda_precision * qda_recall) / (qda_precision + qda_recall)
+
+lda_precision
+lda_recall
+lda_f1
+qda_precision
+qda_recall
+qda_f1
+
+```
+
+```{r}
+# Get predicted probabilities for the Extreme Weather class
+lda_probs <- predict(lda_model, newdata = balanced_df)$posterior[, "Extreme Weather"]
+qda_probs <- predict(qda_model, newdata = balanced_df)$posterior[, "Extreme Weather"]
+
+```
+
+```{r}
+# True labels (ensure they are treated as factors for comparison)
+true_labels <- factor(balanced_df$extreme_weather_binary, levels = c("Normal", "Extreme Weather"))
+positive_class <- "Extreme Weather"
+
+#LDA
+threshold_lda <- seq(0, 1, 0.01)
+TPR_lda <- FPR_lda <- err_rate_lda <- rep(0, length(threshold_lda))
+```
+
+```{r}
+for (i in seq_along(threshold_lda)) {
+  Yhat_lda <- ifelse(lda_probs >= threshold_lda[[i]], positive_class, "Normal")
+  Yhat_lda_factor <- factor(Yhat_lda, levels = c("Normal", "Extreme Weather"))
+  err_rate_lda[i] <- mean(Yhat_lda_factor != true_labels)
+  TPR_lda[i] <- sum(Yhat_lda == positive_class & true_labels == positive_class) / sum(true_labels == positive_class)
+  FPR_lda[i] <- sum(Yhat_lda == positive_class & true_labels == "Normal") / sum(true_labels == "Normal")
+}
+
+# Plot Error Rate vs. Threshold for LDA
+plot(threshold_lda, err_rate_lda, type = "p", xlab = "Threshold (Probability of Extreme Weather)", ylab = "Error Rate",
+     main = "LDA: Error Rate vs. Threshold", pch = 16, cex = 0.8)
+
+```
+
+```{r}
+# Plot ROC Curve for LDA
+plot(FPR_lda, TPR_lda, type = "p", xlab = "False Positive Rate", ylab = "True Positive Rate",
+     main = "LDA: ROC Curve", pch = 16, cex = 0.8, xlim = c(0, 1), ylim = c(0, 1))
+abline(0, 1, lty = 2, col = "red")
+```
+
+```{r}
+threshold_qda <- seq(0, 1, 0.01)
+TPR_qda <- FPR_qda <- err_rate_qda <- rep(0, length(threshold_qda))
+
+for (i in seq_along(threshold_qda)) {
+  Yhat_qda <- ifelse(qda_probs >= threshold_qda[[i]], positive_class, "Normal")
+  Yhat_qda_factor <- factor(Yhat_qda, levels = c("Normal", "Extreme Weather"))
+  err_rate_qda[i] <- mean(Yhat_qda_factor != true_labels)
+  TPR_qda[i] <- sum(Yhat_qda == positive_class & true_labels == positive_class) / sum(true_labels == positive_class)
+  FPR_qda[i] <- sum(Yhat_qda == positive_class & true_labels == "Normal") / sum(true_labels == "Normal")
+}
+
+```
+
+```{r}
+plot(threshold_qda, err_rate_qda, type = "p", xlab = "Threshold (Probability of Extreme Weather)", ylab = "Error Rate",
+     main = "QDA: Error Rate vs. Threshold", pch = 16, cex = 0.8)
+
+# Plot ROC Curve for QDA
+plot(FPR_qda, TPR_qda, type = "p", xlab = "False Positive Rate", ylab = "True Positive Rate",
+     main = "QDA: ROC Curve", pch = 16, cex = 0.8, xlim = c(0, 1), ylim = c(0, 1))
+abline(0, 1, lty = 2, col = "red")
+```
+
+```{r}
+# LDA Results 
+lda_results_df <- data.frame(
+  Metric = c("Best Threshold",
+             "TPR at Best Threshold",
+             "FPR at Best Threshold"),
+  Value = c(best_threshold_lda,
+            best_TPR_lda,
+            best_FPR_lda)
+)
+
+lda_results_df
+
+# QDA Results 
+qda_results_df <- data.frame(
+  Metric = c("Best Threshold",
+             "TPR at Best Threshold",
+             "FPR at Best Threshold"),
+  Value = c(best_threshold_qda,
+            best_TPR_qda,
+            best_FPR_qda)
+)
+
+qda_results_df
+```
+
+After evaluating the models, it seems that QDA performs better. While looking at the ROC curves and error rates, we found that the best threshold for LDA is 0.66 and QDA is 0.58.
 
 ## Linear Regression
 
@@ -716,7 +932,7 @@ classification_results <- data.frame(
   )
 )
 
-kable(classification_results, caption = "Classification Model Comparison")
+knitr::kable(classification_results, caption = "Classification Model Comparison")
 
 # Regression model comparison
 regression_results <- data.frame(
