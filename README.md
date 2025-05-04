@@ -103,7 +103,8 @@ This project aims to analyze and predict temperature trends over time using hist
 ## Directory:
 - analysis: Contains our analysis in R
    -   climate-classification.qmd : main R file with evaluation, models, evaluation
-   -   climate.html : rendered html file
+   -   climate-classification.html : rendered html file
+   -   climate-classification_files : supportive files for HTML page
      
 - data: Contains our dataset
   - Climate-Data.csv : updated dataset from 2000-2025 with DC coordinates
