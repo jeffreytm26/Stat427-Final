@@ -100,7 +100,7 @@ Each member attended group meetings and contributed to data cleaning, explorator
 ## Summary:
 This project aims to analyze and predict temperature trends over time using historical climate data from Washington, D.C. By leveraging regression and classification models, we will examine climate change indicators and their potential implications for energy consumption and environmental policies. The final deliverable will be a poster presentation summarizing our findings, methodologies, and key takeaways.
 
-##Directory:
+## Directory:
 - analysis: Contains our analysis in R
    -   climate-classification.qmd : main R file with evaluation, models, evaluation
    -   climate.html : rendered html file
