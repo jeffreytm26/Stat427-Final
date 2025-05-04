@@ -1,0 +1,1738 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.3.450">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Gracie Abrahams, Jeffrey Mann, Luke Carignan">
+
+<title>Predicting Temperature Changes Over Time to Indicate Climate Trends</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="climate-classification_files/libs/clipboard/clipboard.min.js"></script>
+<script src="climate-classification_files/libs/quarto-html/quarto.js"></script>
+<script src="climate-classification_files/libs/quarto-html/popper.min.js"></script>
+<script src="climate-classification_files/libs/quarto-html/tippy.umd.min.js"></script>
+<script src="climate-classification_files/libs/quarto-html/anchor.min.js"></script>
+<link href="climate-classification_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="climate-classification_files/libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="climate-classification_files/libs/bootstrap/bootstrap.min.js"></script>
+<link href="climate-classification_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="climate-classification_files/libs/bootstrap/bootstrap.min.css" rel="stylesheet" id="quarto-bootstrap" data-mode="light">
+
+
+</head>
+
+<body class="fullcontent">
+
+<div id="quarto-content" class="page-columns page-rows-contents page-layout-article">
+
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Predicting Temperature Changes Over Time to Indicate Climate Trends</h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    <div>
+    <div class="quarto-title-meta-heading">Author</div>
+    <div class="quarto-title-meta-contents">
+             <p>Gracie Abrahams, Jeffrey Mann, Luke Carignan </p>
+          </div>
+  </div>
+    
+  
+    
+  </div>
+  
+
+</header>
+
+<section id="predicting-temperature-changes-over-time-to-indicate-climate-trends" class="level1">
+<h1>Predicting Temperature Changes Over Time to Indicate Climate Trends</h1>
+<section id="can-we-classify-extreme-weather-events-using-machine-learning" class="level2">
+<h2 class="anchored" data-anchor-id="can-we-classify-extreme-weather-events-using-machine-learning">1) Can we classify extreme weather events using machine learning?</h2>
+<p>Load necessary packages.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(dplyr)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>
+Attaching package: 'dplyr'</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>The following objects are masked from 'package:stats':
+
+    filter, lag</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>The following objects are masked from 'package:base':
+
+    intersect, setdiff, setequal, union</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidyverse)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>── Attaching core tidyverse packages ──────────────────────── tidyverse 2.0.0 ──
+✔ forcats   1.0.0     ✔ readr     2.1.5
+✔ ggplot2   3.5.1     ✔ stringr   1.5.1
+✔ lubridate 1.9.4     ✔ tibble    3.2.1
+✔ purrr     1.0.4     ✔ tidyr     1.3.1</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>── Conflicts ────────────────────────────────────────── tidyverse_conflicts() ──
+✖ dplyr::filter() masks stats::filter()
+✖ dplyr::lag()    masks stats::lag()
+ℹ Use the conflicted package (&lt;http://conflicted.r-lib.org/&gt;) to force all conflicts to become errors</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(lubridate)</span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(glmnet)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Loading required package: Matrix
+
+Attaching package: 'Matrix'
+
+The following objects are masked from 'package:tidyr':
+
+    expand, pack, unpack
+
+Loaded glmnet 4.1-8</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(pls)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>
+Attaching package: 'pls'
+
+The following object is masked from 'package:stats':
+
+    loadings</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(ggplot2)</span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(ISLR2)</span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(leaps)</span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(corrplot)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>corrplot 0.95 loaded
+
+Attaching package: 'corrplot'
+
+The following object is masked from 'package:pls':
+
+    corrplot</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(boot)</span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(class)</span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(MASS)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>
+Attaching package: 'MASS'
+
+The following object is masked from 'package:ISLR2':
+
+    Boston
+
+The following object is masked from 'package:dplyr':
+
+    select</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(GGally)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Registered S3 method overwritten by 'GGally':
+  method from   
+  +.gg   ggplot2</code></pre>
+</div>
+</div>
+</section>
+<section id="exploratory-data-analysis" class="level2">
+<h2 class="anchored" data-anchor-id="exploratory-data-analysis">Exploratory Data Analysis</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>climate_data <span class="ot">&lt;-</span> <span class="fu">read.csv</span>(<span class="st">"../data/Climate-Data.csv"</span>)</span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(climate_data)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>           valid_time        u10        v10      d2m      t2m      msl sst
+1 2000-01-01 00:00:00 -1.8177185 0.08259582 274.2535 279.5596 102083.3  NA
+2 2000-01-01 01:00:00 -1.5528564 1.62506100 274.6372 279.9661 102180.6  NA
+3 2000-01-01 02:00:00 -0.1237946 2.35795600 274.8160 278.8860 102226.1  NA
+4 2000-01-01 03:00:00  0.7768097 2.16107180 275.0527 277.8464 102262.3  NA
+5 2000-01-01 04:00:00  1.3988190 1.77383420 274.8001 277.0334 102297.1  NA
+6 2000-01-01 05:00:00  1.7271118 1.30332950 274.2341 276.0525 102294.2  NA
+        sp tp latitude longitude
+1 101054.4  0       39       -77
+2 101149.1  0       39       -77
+3 101193.5  0       39       -77
+4 101229.3  0       39       -77
+5 101263.1  0       39       -77
+6 101259.4  0       39       -77</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb20"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>climate_data<span class="sc">$</span>valid_time <span class="ot">&lt;-</span> <span class="fu">ymd_hms</span>(climate_data<span class="sc">$</span>valid_time)</span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Filter between 2000 and 2025</span></span>
+<span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a>climate_data <span class="ot">&lt;-</span> climate_data <span class="sc">%&gt;%</span></span>
+<span id="cb20-5"><a href="#cb20-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(<span class="fu">year</span>(valid_time) <span class="sc">&gt;=</span> <span class="dv">2000</span>, <span class="fu">year</span>(valid_time) <span class="sc">&lt;=</span> <span class="dv">2025</span>)</span>
+<span id="cb20-6"><a href="#cb20-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb20-7"><a href="#cb20-7" aria-hidden="true" tabindex="-1"></a><span class="fu">nrow</span>(climate_data)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 221880</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb22"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(dplyr)</span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a>climate_data <span class="ot">&lt;-</span> climate_data <span class="sc">%&gt;%</span> dplyr<span class="sc">::</span><span class="fu">select</span>(<span class="sc">-</span>sst)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb23"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a>climate_data <span class="ot">&lt;-</span> climate_data <span class="sc">%&gt;%</span></span>
+<span id="cb23-2"><a href="#cb23-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb23-3"><a href="#cb23-3" aria-hidden="true" tabindex="-1"></a>    <span class="at">date =</span> <span class="fu">as.Date</span>(valid_time),</span>
+<span id="cb23-4"><a href="#cb23-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">year =</span> <span class="fu">year</span>(valid_time),</span>
+<span id="cb23-5"><a href="#cb23-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">month =</span> <span class="fu">month</span>(valid_time),</span>
+<span id="cb23-6"><a href="#cb23-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">day =</span> <span class="fu">day</span>(valid_time),</span>
+<span id="cb23-7"><a href="#cb23-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">hour =</span> <span class="fu">hour</span>(valid_time)</span>
+<span id="cb23-8"><a href="#cb23-8" aria-hidden="true" tabindex="-1"></a>  )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb24"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a>climate_data <span class="ot">&lt;-</span> climate_data <span class="sc">%&gt;%</span></span>
+<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb24-3"><a href="#cb24-3" aria-hidden="true" tabindex="-1"></a>    <span class="at">t2m_f =</span> (t2m <span class="sc">-</span> <span class="fl">273.15</span>) <span class="sc">*</span> <span class="dv">9</span><span class="sc">/</span><span class="dv">5</span> <span class="sc">+</span> <span class="dv">32</span>,</span>
+<span id="cb24-4"><a href="#cb24-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">d2m_f =</span> (d2m <span class="sc">-</span> <span class="fl">273.15</span>) <span class="sc">*</span> <span class="dv">9</span><span class="sc">/</span><span class="dv">5</span> <span class="sc">+</span> <span class="dv">32</span></span>
+<span id="cb24-5"><a href="#cb24-5" aria-hidden="true" tabindex="-1"></a>  )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb25"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a>avg_monthly_temp <span class="ot">&lt;-</span> climate_data <span class="sc">%&gt;%</span></span>
+<span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(month) <span class="sc">%&gt;%</span></span>
+<span id="cb25-3"><a href="#cb25-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">avg_temp_f =</span> <span class="fu">mean</span>(t2m_f, <span class="at">na.rm =</span> <span class="cn">TRUE</span>))</span>
+<span id="cb25-4"><a href="#cb25-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb25-5"><a href="#cb25-5" aria-hidden="true" tabindex="-1"></a>avg_monthly_temp</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 12 × 2
+   month avg_temp_f
+   &lt;dbl&gt;      &lt;dbl&gt;
+ 1     1       35.2
+ 2     2       38.0
+ 3     3       46.3
+ 4     4       56.6
+ 5     5       65.7
+ 6     6       74.7
+ 7     7       78.9
+ 8     8       77.0
+ 9     9       70.0
+10    10       58.6
+11    11       47.8
+12    12       39.4</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb27"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a><span class="fu">colSums</span>(<span class="fu">is.na</span>(climate_data))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>valid_time        u10        v10        d2m        t2m        msl         sp 
+         0          0          0          0          0          0          0 
+        tp   latitude  longitude       date       year      month        day 
+         0          0          0          0          0          0          0 
+      hour      t2m_f      d2m_f 
+         0          0          0 </code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb29"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a>weather_clean <span class="ot">&lt;-</span> climate_data <span class="sc">%&gt;%</span> <span class="fu">drop_na</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb30"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Temperature distribution</span></span>
+<span id="cb30-2"><a href="#cb30-2" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(weather_clean, <span class="fu">aes</span>(<span class="at">x =</span> t2m_f)) <span class="sc">+</span></span>
+<span id="cb30-3"><a href="#cb30-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_histogram</span>(<span class="at">bins =</span> <span class="dv">50</span>, <span class="at">fill =</span> <span class="st">"skyblue"</span>) <span class="sc">+</span></span>
+<span id="cb30-4"><a href="#cb30-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Temperature (F) Distribution"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p><img src="climate-classification_files/figure-html/unnamed-chunk-9-1.png" class="img-fluid" width="672"></p>
+</div>
+<div class="sourceCode cell-code" id="cb31"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Precipitation</span></span>
+<span id="cb31-2"><a href="#cb31-2" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(weather_clean, <span class="fu">aes</span>(<span class="at">x =</span> tp)) <span class="sc">+</span></span>
+<span id="cb31-3"><a href="#cb31-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_histogram</span>(<span class="at">bins =</span> <span class="dv">50</span>, <span class="at">fill =</span> <span class="st">"lightgreen"</span>) <span class="sc">+</span></span>
+<span id="cb31-4"><a href="#cb31-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Precipitation Distribution"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p><img src="climate-classification_files/figure-html/unnamed-chunk-9-2.png" class="img-fluid" width="672"></p>
+</div>
+<div class="sourceCode cell-code" id="cb32"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Wind speed (calculated)</span></span>
+<span id="cb32-2"><a href="#cb32-2" aria-hidden="true" tabindex="-1"></a>weather_clean <span class="ot">&lt;-</span> weather_clean <span class="sc">%&gt;%</span></span>
+<span id="cb32-3"><a href="#cb32-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">wind_speed =</span> <span class="fu">sqrt</span>(u10<span class="sc">^</span><span class="dv">2</span> <span class="sc">+</span> v10<span class="sc">^</span><span class="dv">2</span>))</span>
+<span id="cb32-4"><a href="#cb32-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb32-5"><a href="#cb32-5" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(weather_clean, <span class="fu">aes</span>(<span class="at">x =</span> wind_speed)) <span class="sc">+</span></span>
+<span id="cb32-6"><a href="#cb32-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_histogram</span>(<span class="at">bins =</span> <span class="dv">50</span>, <span class="at">fill =</span> <span class="st">"salmon"</span>) <span class="sc">+</span></span>
+<span id="cb32-7"><a href="#cb32-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Wind Speed Distribution"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p><img src="climate-classification_files/figure-html/unnamed-chunk-9-3.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb33"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(weather_clean, <span class="fu">aes</span>(<span class="at">x =</span> valid_time, <span class="at">y =</span> t2m_f)) <span class="sc">+</span></span>
+<span id="cb33-2"><a href="#cb33-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>(<span class="at">alpha =</span> <span class="fl">0.3</span>) <span class="sc">+</span></span>
+<span id="cb33-3"><a href="#cb33-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Temperature Over Time"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p><img src="climate-classification_files/figure-html/unnamed-chunk-10-1.png" class="img-fluid" width="672"></p>
+</div>
+<div class="sourceCode cell-code" id="cb34"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(weather_clean, <span class="fu">aes</span>(<span class="at">x =</span> valid_time, <span class="at">y =</span> tp)) <span class="sc">+</span></span>
+<span id="cb34-2"><a href="#cb34-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>(<span class="at">alpha =</span> <span class="fl">0.3</span>) <span class="sc">+</span></span>
+<span id="cb34-3"><a href="#cb34-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Precipitation Over Time"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p><img src="climate-classification_files/figure-html/unnamed-chunk-10-2.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb35"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a>numeric_cols <span class="ot">&lt;-</span> weather_clean <span class="sc">%&gt;%</span></span>
+<span id="cb35-2"><a href="#cb35-2" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">select</span>(t2m_f, d2m_f, msl, sp, wind_speed, tp)</span>
+<span id="cb35-3"><a href="#cb35-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb35-4"><a href="#cb35-4" aria-hidden="true" tabindex="-1"></a><span class="fu">corrplot</span>(<span class="fu">cor</span>(numeric_cols), <span class="at">method =</span> <span class="st">"circle"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p><img src="climate-classification_files/figure-html/unnamed-chunk-11-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb36"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(climate_data)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>   valid_time                       u10                v10          
+ Min.   :2000-01-01 00:00:00   Min.   :-12.3994   Min.   :-10.7071  
+ 1st Qu.:2006-04-30 05:45:00   1st Qu.: -0.8662   1st Qu.: -1.7633  
+ Median :2012-08-27 11:30:00   Median :  0.7404   Median : -0.2191  
+ Mean   :2012-08-27 11:30:00   Mean   :  0.7105   Mean   : -0.1161  
+ 3rd Qu.:2018-12-25 17:15:00   3rd Qu.:  2.1105   3rd Qu.:  1.5733  
+ Max.   :2025-04-23 23:00:00   Max.   : 11.4578   Max.   :  9.4432  
+      d2m             t2m             msl               sp        
+ Min.   :241.6   Min.   :255.5   Min.   : 96863   Min.   : 95874  
+ 1st Qu.:271.9   1st Qu.:279.1   1st Qu.:101286   1st Qu.:100282  
+ Median :281.1   Median :287.6   Median :101729   Median :100719  
+ Mean   :280.1   Mean   :287.2   Mean   :101747   Mean   :100729  
+ 3rd Qu.:289.1   3rd Qu.:295.5   3rd Qu.:102210   3rd Qu.:101184  
+ Max.   :300.7   Max.   :313.4   Max.   :104788   Max.   :103686  
+       tp               latitude    longitude        date           
+ Min.   :0.000e+00   Min.   :39   Min.   :-77   Min.   :2000-01-01  
+ 1st Qu.:0.000e+00   1st Qu.:39   1st Qu.:-77   1st Qu.:2006-04-30  
+ Median :0.000e+00   Median :39   Median :-77   Median :2012-08-27  
+ Mean   :1.271e-04   Mean   :39   Mean   :-77   Mean   :2012-08-27  
+ 3rd Qu.:2.861e-06   3rd Qu.:39   3rd Qu.:-77   3rd Qu.:2018-12-25  
+ Max.   :1.792e-02   Max.   :39   Max.   :-77   Max.   :2025-04-23  
+      year          month             day             hour      
+ Min.   :2000   Min.   : 1.000   Min.   : 1.00   Min.   : 0.00  
+ 1st Qu.:2006   1st Qu.: 3.000   1st Qu.: 8.00   1st Qu.: 5.75  
+ Median :2012   Median : 6.000   Median :16.00   Median :11.50  
+ Mean   :2012   Mean   : 6.472   Mean   :15.72   Mean   :11.50  
+ 3rd Qu.:2018   3rd Qu.: 9.000   3rd Qu.:23.00   3rd Qu.:17.25  
+ Max.   :2025   Max.   :12.000   Max.   :31.00   Max.   :23.00  
+     t2m_f              d2m_f       
+ Min.   :  0.1797   Min.   :-24.87  
+ 1st Qu.: 42.6561   1st Qu.: 29.69  
+ Median : 58.0968   Median : 46.35  
+ Mean   : 57.2730   Mean   : 44.54  
+ 3rd Qu.: 72.2645   3rd Qu.: 60.77  
+ Max.   :104.3832   Max.   : 81.61  </code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb38"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb38-1"><a href="#cb38-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Calculate total wind speed in m/s</span></span>
+<span id="cb38-2"><a href="#cb38-2" aria-hidden="true" tabindex="-1"></a>weather_clean <span class="ot">&lt;-</span> weather_clean <span class="sc">%&gt;%</span></span>
+<span id="cb38-3"><a href="#cb38-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb38-4"><a href="#cb38-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">wind_speed =</span> <span class="fu">sqrt</span>(u10<span class="sc">^</span><span class="dv">2</span> <span class="sc">+</span> v10<span class="sc">^</span><span class="dv">2</span>),  <span class="co"># Calculate total wind speed in m/s</span></span>
+<span id="cb38-5"><a href="#cb38-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">wind_speed_kmh =</span> wind_speed <span class="sc">*</span> <span class="fl">3.6</span>   <span class="co"># Convert wind speed to km/h</span></span>
+<span id="cb38-6"><a href="#cb38-6" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb38-7"><a href="#cb38-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb38-8"><a href="#cb38-8" aria-hidden="true" tabindex="-1"></a><span class="co"># Check the first few rows to confirm the calculation</span></span>
+<span id="cb38-9"><a href="#cb38-9" aria-hidden="true" tabindex="-1"></a><span class="fu">head</span>(weather_clean)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>           valid_time        u10        v10      d2m      t2m      msl       sp
+1 2000-01-01 00:00:00 -1.8177185 0.08259582 274.2535 279.5596 102083.3 101054.4
+2 2000-01-01 01:00:00 -1.5528564 1.62506100 274.6372 279.9661 102180.6 101149.1
+3 2000-01-01 02:00:00 -0.1237946 2.35795600 274.8160 278.8860 102226.1 101193.5
+4 2000-01-01 03:00:00  0.7768097 2.16107180 275.0527 277.8464 102262.3 101229.3
+5 2000-01-01 04:00:00  1.3988190 1.77383420 274.8001 277.0334 102297.1 101263.1
+6 2000-01-01 05:00:00  1.7271118 1.30332950 274.2341 276.0525 102294.2 101259.4
+  tp latitude longitude       date year month day hour    t2m_f    d2m_f
+1  0       39       -77 2000-01-01 2000     1   1    0 43.53733 33.98637
+2  0       39       -77 2000-01-01 2000     1   1    1 44.26903 34.67696
+3  0       39       -77 2000-01-01 2000     1   1    2 42.32480 34.99880
+4  0       39       -77 2000-01-01 2000     1   1    3 40.45352 35.42486
+5  0       39       -77 2000-01-01 2000     1   1    4 38.99012 34.97018
+6  0       39       -77 2000-01-01 2000     1   1    5 37.22459 33.95143
+  wind_speed wind_speed_kmh
+1   1.819594       6.550539
+2   2.247707       8.091745
+3   2.361203       8.500332
+4   2.296446       8.267206
+5   2.259022       8.132481
+6   2.163697       7.789308</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb40"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb40-1"><a href="#cb40-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Calculate monthly average temperatures by year</span></span>
+<span id="cb40-2"><a href="#cb40-2" aria-hidden="true" tabindex="-1"></a>monthly_avg_temp <span class="ot">&lt;-</span> climate_data <span class="sc">%&gt;%</span></span>
+<span id="cb40-3"><a href="#cb40-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(year, month) <span class="sc">%&gt;%</span></span>
+<span id="cb40-4"><a href="#cb40-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">avg_temp =</span> <span class="fu">mean</span>(t2m_f, <span class="at">na.rm =</span> <span class="cn">TRUE</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>`summarise()` has grouped output by 'year'. You can override using the
+`.groups` argument.</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb42"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb42-1"><a href="#cb42-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Plot the monthly averages for each year</span></span>
+<span id="cb42-2"><a href="#cb42-2" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(monthly_avg_temp, <span class="fu">aes</span>(<span class="at">x =</span> year, <span class="at">y =</span> avg_temp, <span class="at">color =</span> <span class="fu">factor</span>(month))) <span class="sc">+</span></span>
+<span id="cb42-3"><a href="#cb42-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>() <span class="sc">+</span></span>
+<span id="cb42-4"><a href="#cb42-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Average Monthly Temperature Over the Years"</span>,</span>
+<span id="cb42-5"><a href="#cb42-5" aria-hidden="true" tabindex="-1"></a>       <span class="at">x =</span> <span class="st">"Year"</span>, <span class="at">y =</span> <span class="st">"Average Temperature (°F)"</span>) <span class="sc">+</span></span>
+<span id="cb42-6"><a href="#cb42-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>() <span class="sc">+</span></span>
+<span id="cb42-7"><a href="#cb42-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_color_brewer</span>(<span class="at">palette =</span> <span class="st">"Set3"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p><img src="climate-classification_files/figure-html/unnamed-chunk-14-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb43"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb43-1"><a href="#cb43-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Filter out 2025 </span></span>
+<span id="cb43-2"><a href="#cb43-2" aria-hidden="true" tabindex="-1"></a>annual_avg_temp <span class="ot">&lt;-</span> climate_data <span class="sc">%&gt;%</span></span>
+<span id="cb43-3"><a href="#cb43-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(year <span class="sc">!=</span> <span class="dv">2025</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb43-4"><a href="#cb43-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(year) <span class="sc">%&gt;%</span></span>
+<span id="cb43-5"><a href="#cb43-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">avg_temp =</span> <span class="fu">mean</span>(t2m_f, <span class="at">na.rm =</span> <span class="cn">TRUE</span>))</span>
+<span id="cb43-6"><a href="#cb43-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb43-7"><a href="#cb43-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Plot the annual temperature trends</span></span>
+<span id="cb43-8"><a href="#cb43-8" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(annual_avg_temp, <span class="fu">aes</span>(<span class="at">x =</span> year, <span class="at">y =</span> avg_temp)) <span class="sc">+</span></span>
+<span id="cb43-9"><a href="#cb43-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>() <span class="sc">+</span></span>
+<span id="cb43-10"><a href="#cb43-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Annual Average Temperature Trends (Excluding 2025)"</span>,</span>
+<span id="cb43-11"><a href="#cb43-11" aria-hidden="true" tabindex="-1"></a>       <span class="at">x =</span> <span class="st">"Year"</span>, <span class="at">y =</span> <span class="st">"Average Temperature (°F)"</span>) <span class="sc">+</span></span>
+<span id="cb43-12"><a href="#cb43-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p><img src="climate-classification_files/figure-html/unnamed-chunk-15-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb44"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb44-1"><a href="#cb44-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Filter for June and December only</span></span>
+<span id="cb44-2"><a href="#cb44-2" aria-hidden="true" tabindex="-1"></a><span class="co"># This is to check that data looks accurate for warm/cool months typically to ensure we have correct coordinates</span></span>
+<span id="cb44-3"><a href="#cb44-3" aria-hidden="true" tabindex="-1"></a>june_december_data <span class="ot">&lt;-</span> climate_data <span class="sc">%&gt;%</span></span>
+<span id="cb44-4"><a href="#cb44-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(month <span class="sc">==</span> <span class="dv">7</span> <span class="sc">|</span> month <span class="sc">==</span> <span class="dv">12</span>)</span>
+<span id="cb44-5"><a href="#cb44-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb44-6"><a href="#cb44-6" aria-hidden="true" tabindex="-1"></a><span class="co"># Calculate average temperature for June and December across years</span></span>
+<span id="cb44-7"><a href="#cb44-7" aria-hidden="true" tabindex="-1"></a>june_december_avg_temp <span class="ot">&lt;-</span> june_december_data <span class="sc">%&gt;%</span></span>
+<span id="cb44-8"><a href="#cb44-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(year, month) <span class="sc">%&gt;%</span></span>
+<span id="cb44-9"><a href="#cb44-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">avg_temp =</span> <span class="fu">mean</span>(t2m_f, <span class="at">na.rm =</span> <span class="cn">TRUE</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>`summarise()` has grouped output by 'year'. You can override using the
+`.groups` argument.</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb46"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb46-1"><a href="#cb46-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Plot the temperature trends for June and December</span></span>
+<span id="cb46-2"><a href="#cb46-2" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(june_december_avg_temp, <span class="fu">aes</span>(<span class="at">x =</span> year, <span class="at">y =</span> avg_temp, <span class="at">color =</span> <span class="fu">factor</span>(month))) <span class="sc">+</span></span>
+<span id="cb46-3"><a href="#cb46-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>() <span class="sc">+</span></span>
+<span id="cb46-4"><a href="#cb46-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Temperature Trends in June and December"</span>,</span>
+<span id="cb46-5"><a href="#cb46-5" aria-hidden="true" tabindex="-1"></a>       <span class="at">x =</span> <span class="st">"Year"</span>, <span class="at">y =</span> <span class="st">"Average Temperature (°F)"</span>) <span class="sc">+</span></span>
+<span id="cb46-6"><a href="#cb46-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>() <span class="sc">+</span></span>
+<span id="cb46-7"><a href="#cb46-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_color_manual</span>(<span class="at">values =</span> <span class="fu">c</span>(<span class="st">"blue"</span>, <span class="st">"red"</span>), <span class="at">labels =</span> <span class="fu">c</span>(<span class="st">"June"</span>, <span class="st">"December"</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p><img src="climate-classification_files/figure-html/unnamed-chunk-16-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb47"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb47-1"><a href="#cb47-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Remove rows with missing values for temperature</span></span>
+<span id="cb47-2"><a href="#cb47-2" aria-hidden="true" tabindex="-1"></a>yearly_temp_stats <span class="ot">&lt;-</span> climate_data <span class="sc">%&gt;%</span></span>
+<span id="cb47-3"><a href="#cb47-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(year <span class="sc">!=</span> <span class="dv">2025</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb47-4"><a href="#cb47-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(<span class="sc">!</span><span class="fu">is.na</span>(t2m_f)) <span class="sc">%&gt;%</span>  </span>
+<span id="cb47-5"><a href="#cb47-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(year) <span class="sc">%&gt;%</span></span>
+<span id="cb47-6"><a href="#cb47-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(</span>
+<span id="cb47-7"><a href="#cb47-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">avg_temp =</span> <span class="fu">mean</span>(t2m_f, <span class="at">na.rm =</span> <span class="cn">TRUE</span>),</span>
+<span id="cb47-8"><a href="#cb47-8" aria-hidden="true" tabindex="-1"></a>    <span class="at">min_temp =</span> <span class="fu">min</span>(t2m_f, <span class="at">na.rm =</span> <span class="cn">TRUE</span>),</span>
+<span id="cb47-9"><a href="#cb47-9" aria-hidden="true" tabindex="-1"></a>    <span class="at">max_temp =</span> <span class="fu">max</span>(t2m_f, <span class="at">na.rm =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb47-10"><a href="#cb47-10" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb47-11"><a href="#cb47-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb47-12"><a href="#cb47-12" aria-hidden="true" tabindex="-1"></a><span class="co"># Check if any missing values were present</span></span>
+<span id="cb47-13"><a href="#cb47-13" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(yearly_temp_stats)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>      year         avg_temp        min_temp          max_temp     
+ Min.   :2000   Min.   :54.81   Min.   : 0.1797   Min.   : 92.91  
+ 1st Qu.:2006   1st Qu.:56.72   1st Qu.: 6.6202   1st Qu.: 96.92  
+ Median :2012   Median :57.55   Median : 8.0440   Median : 98.28  
+ Mean   :2012   Mean   :57.45   Mean   : 9.3580   Mean   : 98.57  
+ 3rd Qu.:2018   3rd Qu.:58.52   3rd Qu.:10.8568   3rd Qu.:100.13  
+ Max.   :2024   Max.   :59.19   Max.   :22.2231   Max.   :104.38  </code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb49"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb49-1"><a href="#cb49-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Plot the min, max, and avg temperature trends by year</span></span>
+<span id="cb49-2"><a href="#cb49-2" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(yearly_temp_stats, <span class="fu">aes</span>(<span class="at">x =</span> <span class="fu">factor</span>(year))) <span class="sc">+</span></span>
+<span id="cb49-3"><a href="#cb49-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_bar</span>(<span class="fu">aes</span>(<span class="at">y =</span> avg_temp), <span class="at">stat =</span> <span class="st">"identity"</span>, <span class="at">fill =</span> <span class="st">"lightblue"</span>, <span class="at">alpha =</span> <span class="fl">0.6</span>) <span class="sc">+</span></span>
+<span id="cb49-4"><a href="#cb49-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>(<span class="fu">aes</span>(<span class="at">y =</span> min_temp), <span class="at">color =</span> <span class="st">"blue"</span>, <span class="at">size =</span> <span class="dv">1</span>, <span class="at">group =</span> <span class="dv">1</span>) <span class="sc">+</span></span>
+<span id="cb49-5"><a href="#cb49-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_line</span>(<span class="fu">aes</span>(<span class="at">y =</span> max_temp), <span class="at">color =</span> <span class="st">"red"</span>, <span class="at">size =</span> <span class="dv">1</span>, <span class="at">group =</span> <span class="dv">1</span>) <span class="sc">+</span></span>
+<span id="cb49-6"><a href="#cb49-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Yearly Temperature Trends (Min, Max, and Average)"</span>,</span>
+<span id="cb49-7"><a href="#cb49-7" aria-hidden="true" tabindex="-1"></a>       <span class="at">x =</span> <span class="st">"Year"</span>, <span class="at">y =</span> <span class="st">"Temperature (°F)"</span>) <span class="sc">+</span></span>
+<span id="cb49-8"><a href="#cb49-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>() <span class="sc">+</span></span>
+<span id="cb49-9"><a href="#cb49-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(<span class="at">axis.text.x =</span> <span class="fu">element_text</span>(<span class="at">angle =</span> <span class="dv">45</span>, <span class="at">hjust =</span> <span class="dv">1</span>)) <span class="sc">+</span></span>
+<span id="cb49-10"><a href="#cb49-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_y_continuous</span>(<span class="at">breaks =</span> <span class="fu">seq</span>(<span class="fu">min</span>(yearly_temp_stats<span class="sc">$</span>min_temp), <span class="fu">max</span>(yearly_temp_stats<span class="sc">$</span>max_temp), <span class="at">by =</span> <span class="dv">2</span>)) </span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning: Using `size` aesthetic for lines was deprecated in ggplot2 3.4.0.
+ℹ Please use `linewidth` instead.</code></pre>
+</div>
+<div class="cell-output-display">
+<p><img src="climate-classification_files/figure-html/unnamed-chunk-17-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb51"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb51-1"><a href="#cb51-1" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(weather_clean<span class="sc">$</span>tp)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>     Min.   1st Qu.    Median      Mean   3rd Qu.      Max. 
+0.000e+00 0.000e+00 0.000e+00 1.271e-04 2.861e-06 1.792e-02 </code></pre>
+</div>
+</div>
+</section>
+<section id="extreme-weather-encoding-classification" class="level2">
+<h2 class="anchored" data-anchor-id="extreme-weather-encoding-classification">Extreme Weather Encoding / Classification</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb53"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb53-1"><a href="#cb53-1" aria-hidden="true" tabindex="-1"></a>weather_classified <span class="ot">&lt;-</span> weather_clean <span class="sc">%&gt;%</span></span>
+<span id="cb53-2"><a href="#cb53-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb53-3"><a href="#cb53-3" aria-hidden="true" tabindex="-1"></a>    <span class="at">extreme_type =</span> <span class="fu">case_when</span>(</span>
+<span id="cb53-4"><a href="#cb53-4" aria-hidden="true" tabindex="-1"></a>      t2m_f <span class="sc">&gt;=</span> <span class="dv">90</span> <span class="sc">~</span> <span class="st">"Extreme Heat"</span>,</span>
+<span id="cb53-5"><a href="#cb53-5" aria-hidden="true" tabindex="-1"></a>      t2m_f <span class="sc">&lt;=</span> <span class="dv">10</span> <span class="sc">~</span> <span class="st">"Extreme Cold"</span>,</span>
+<span id="cb53-6"><a href="#cb53-6" aria-hidden="true" tabindex="-1"></a>      wind_speed_kmh <span class="sc">&gt;=</span> <span class="dv">30</span> <span class="sc">~</span> <span class="st">"High Wind"</span>,</span>
+<span id="cb53-7"><a href="#cb53-7" aria-hidden="true" tabindex="-1"></a>      tp <span class="sc">&gt;</span> <span class="fl">0.005</span> <span class="sc">~</span> <span class="st">"Heavy Precipitation"</span>,</span>
+<span id="cb53-8"><a href="#cb53-8" aria-hidden="true" tabindex="-1"></a>      <span class="cn">TRUE</span> <span class="sc">~</span> <span class="st">"Normal"</span></span>
+<span id="cb53-9"><a href="#cb53-9" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb53-10"><a href="#cb53-10" aria-hidden="true" tabindex="-1"></a>  )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb54"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb54-1"><a href="#cb54-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Count the number of each extreme type by year</span></span>
+<span id="cb54-2"><a href="#cb54-2" aria-hidden="true" tabindex="-1"></a>extreme_counts <span class="ot">&lt;-</span> weather_classified <span class="sc">%&gt;%</span></span>
+<span id="cb54-3"><a href="#cb54-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(year, extreme_type) <span class="sc">%&gt;%</span></span>
+<span id="cb54-4"><a href="#cb54-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarize</span>(<span class="at">count =</span> <span class="fu">n</span>(), <span class="at">.groups =</span> <span class="st">'drop'</span>)</span>
+<span id="cb54-5"><a href="#cb54-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb54-6"><a href="#cb54-6" aria-hidden="true" tabindex="-1"></a><span class="co"># Plot</span></span>
+<span id="cb54-7"><a href="#cb54-7" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(extreme_counts, <span class="fu">aes</span>(<span class="at">x =</span> year, <span class="at">y =</span> count, <span class="at">fill =</span> extreme_type)) <span class="sc">+</span></span>
+<span id="cb54-8"><a href="#cb54-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_bar</span>(<span class="at">stat =</span> <span class="st">"identity"</span>, <span class="at">position =</span> <span class="st">"stack"</span>) <span class="sc">+</span></span>
+<span id="cb54-9"><a href="#cb54-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_fill_brewer</span>(<span class="at">palette =</span> <span class="st">"Set1"</span>) <span class="sc">+</span></span>
+<span id="cb54-10"><a href="#cb54-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(</span>
+<span id="cb54-11"><a href="#cb54-11" aria-hidden="true" tabindex="-1"></a>    <span class="at">title =</span> <span class="st">"Extreme Weather Events Per Year"</span>,</span>
+<span id="cb54-12"><a href="#cb54-12" aria-hidden="true" tabindex="-1"></a>    <span class="at">x =</span> <span class="st">"Year"</span>,</span>
+<span id="cb54-13"><a href="#cb54-13" aria-hidden="true" tabindex="-1"></a>    <span class="at">y =</span> <span class="st">"Number of Events"</span>,</span>
+<span id="cb54-14"><a href="#cb54-14" aria-hidden="true" tabindex="-1"></a>    <span class="at">fill =</span> <span class="st">"Extreme Weather Type"</span></span>
+<span id="cb54-15"><a href="#cb54-15" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
+<span id="cb54-16"><a href="#cb54-16" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p><img src="climate-classification_files/figure-html/unnamed-chunk-20-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb55"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb55-1"><a href="#cb55-1" aria-hidden="true" tabindex="-1"></a> <span class="co"># Only keep rows that are classified as extreme, normal has class imbalance</span></span>
+<span id="cb55-2"><a href="#cb55-2" aria-hidden="true" tabindex="-1"></a>extreme_only <span class="ot">&lt;-</span> weather_classified <span class="sc">%&gt;%</span></span>
+<span id="cb55-3"><a href="#cb55-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(extreme_type <span class="sc">!=</span> <span class="st">"Normal"</span>)</span>
+<span id="cb55-4"><a href="#cb55-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb55-5"><a href="#cb55-5" aria-hidden="true" tabindex="-1"></a><span class="co"># Count by year and type</span></span>
+<span id="cb55-6"><a href="#cb55-6" aria-hidden="true" tabindex="-1"></a>extreme_counts <span class="ot">&lt;-</span> extreme_only <span class="sc">%&gt;%</span></span>
+<span id="cb55-7"><a href="#cb55-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(year, extreme_type) <span class="sc">%&gt;%</span></span>
+<span id="cb55-8"><a href="#cb55-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarize</span>(<span class="at">count =</span> <span class="fu">n</span>(), <span class="at">.groups =</span> <span class="st">'drop'</span>)</span>
+<span id="cb55-9"><a href="#cb55-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb55-10"><a href="#cb55-10" aria-hidden="true" tabindex="-1"></a><span class="co"># Plot only extreme events</span></span>
+<span id="cb55-11"><a href="#cb55-11" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(extreme_counts, <span class="fu">aes</span>(<span class="at">x =</span> year, <span class="at">y =</span> count, <span class="at">fill =</span> extreme_type)) <span class="sc">+</span></span>
+<span id="cb55-12"><a href="#cb55-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_bar</span>(<span class="at">stat =</span> <span class="st">"identity"</span>, <span class="at">position =</span> <span class="st">"stack"</span>) <span class="sc">+</span></span>
+<span id="cb55-13"><a href="#cb55-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_fill_brewer</span>(<span class="at">palette =</span> <span class="st">"Set1"</span>) <span class="sc">+</span></span>
+<span id="cb55-14"><a href="#cb55-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(</span>
+<span id="cb55-15"><a href="#cb55-15" aria-hidden="true" tabindex="-1"></a>    <span class="at">title =</span> <span class="st">"Extreme Weather Events Per Year (Excludes Normal)"</span>,</span>
+<span id="cb55-16"><a href="#cb55-16" aria-hidden="true" tabindex="-1"></a>    <span class="at">x =</span> <span class="st">"Year"</span>,</span>
+<span id="cb55-17"><a href="#cb55-17" aria-hidden="true" tabindex="-1"></a>    <span class="at">y =</span> <span class="st">"Number of Events"</span>,</span>
+<span id="cb55-18"><a href="#cb55-18" aria-hidden="true" tabindex="-1"></a>    <span class="at">fill =</span> <span class="st">"Extreme Type"</span></span>
+<span id="cb55-19"><a href="#cb55-19" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
+<span id="cb55-20"><a href="#cb55-20" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p><img src="climate-classification_files/figure-html/unnamed-chunk-21-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb56"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb56-1"><a href="#cb56-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Total count of each extreme weather type</span></span>
+<span id="cb56-2"><a href="#cb56-2" aria-hidden="true" tabindex="-1"></a>overall_extreme_summary <span class="ot">&lt;-</span> extreme_only <span class="sc">%&gt;%</span></span>
+<span id="cb56-3"><a href="#cb56-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(extreme_type) <span class="sc">%&gt;%</span></span>
+<span id="cb56-4"><a href="#cb56-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarize</span>(<span class="at">total_count =</span> <span class="fu">n</span>(), <span class="at">.groups =</span> <span class="st">"drop"</span>)</span>
+<span id="cb56-5"><a href="#cb56-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb56-6"><a href="#cb56-6" aria-hidden="true" tabindex="-1"></a><span class="co"># View the summary</span></span>
+<span id="cb56-7"><a href="#cb56-7" aria-hidden="true" tabindex="-1"></a>overall_extreme_summary</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 4 × 2
+  extreme_type        total_count
+  &lt;chr&gt;                     &lt;int&gt;
+1 Extreme Cold                238
+2 Extreme Heat               4003
+3 Heavy Precipitation         471
+4 High Wind                   631</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb58"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb58-1"><a href="#cb58-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Count number of extreme events per year</span></span>
+<span id="cb58-2"><a href="#cb58-2" aria-hidden="true" tabindex="-1"></a>extreme_counts_by_year <span class="ot">&lt;-</span> weather_classified <span class="sc">%&gt;%</span></span>
+<span id="cb58-3"><a href="#cb58-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(extreme_type <span class="sc">!=</span> <span class="st">"Normal"</span>) <span class="sc">%&gt;%</span></span>
+<span id="cb58-4"><a href="#cb58-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(year, extreme_type) <span class="sc">%&gt;%</span></span>
+<span id="cb58-5"><a href="#cb58-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">count =</span> <span class="fu">n</span>(), <span class="at">.groups =</span> <span class="st">"drop"</span>)</span>
+<span id="cb58-6"><a href="#cb58-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb58-7"><a href="#cb58-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Plot</span></span>
+<span id="cb58-8"><a href="#cb58-8" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(extreme_counts_by_year, <span class="fu">aes</span>(<span class="at">x =</span> year, <span class="at">y =</span> count, <span class="at">fill =</span> extreme_type)) <span class="sc">+</span></span>
+<span id="cb58-9"><a href="#cb58-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_col</span>(<span class="at">position =</span> <span class="st">"dodge"</span>) <span class="sc">+</span></span>
+<span id="cb58-10"><a href="#cb58-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(</span>
+<span id="cb58-11"><a href="#cb58-11" aria-hidden="true" tabindex="-1"></a>    <span class="at">title =</span> <span class="st">"Extreme Weather Events by Year"</span>,</span>
+<span id="cb58-12"><a href="#cb58-12" aria-hidden="true" tabindex="-1"></a>    <span class="at">x =</span> <span class="st">"Year"</span>,</span>
+<span id="cb58-13"><a href="#cb58-13" aria-hidden="true" tabindex="-1"></a>    <span class="at">y =</span> <span class="st">"Count of Extreme Events"</span>,</span>
+<span id="cb58-14"><a href="#cb58-14" aria-hidden="true" tabindex="-1"></a>    <span class="at">fill =</span> <span class="st">"Extreme Type"</span></span>
+<span id="cb58-15"><a href="#cb58-15" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
+<span id="cb58-16"><a href="#cb58-16" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p><img src="climate-classification_files/figure-html/unnamed-chunk-23-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb59"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb59-1"><a href="#cb59-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Encoding 0 and 1 for each extreme weather type</span></span>
+<span id="cb59-2"><a href="#cb59-2" aria-hidden="true" tabindex="-1"></a>weather_classified_binary <span class="ot">&lt;-</span> weather_classified <span class="sc">%&gt;%</span></span>
+<span id="cb59-3"><a href="#cb59-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb59-4"><a href="#cb59-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">is_extreme_cold =</span> <span class="fu">ifelse</span>(extreme_type <span class="sc">==</span> <span class="st">"Extreme Cold"</span>, <span class="dv">1</span>, <span class="dv">0</span>),</span>
+<span id="cb59-5"><a href="#cb59-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">is_extreme_heat =</span> <span class="fu">ifelse</span>(extreme_type <span class="sc">==</span> <span class="st">"Extreme Heat"</span>, <span class="dv">1</span>, <span class="dv">0</span>),</span>
+<span id="cb59-6"><a href="#cb59-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">is_heavy_precipitation =</span> <span class="fu">ifelse</span>(extreme_type <span class="sc">==</span> <span class="st">"Heavy Precipitation"</span>, <span class="dv">1</span>, <span class="dv">0</span>),</span>
+<span id="cb59-7"><a href="#cb59-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">is_high_wind =</span> <span class="fu">ifelse</span>(extreme_type <span class="sc">==</span> <span class="st">"High Wind"</span>, <span class="dv">1</span>, <span class="dv">0</span>),</span>
+<span id="cb59-8"><a href="#cb59-8" aria-hidden="true" tabindex="-1"></a>    <span class="at">is_normal =</span> <span class="fu">ifelse</span>(extreme_type <span class="sc">==</span> <span class="st">"Normal"</span>, <span class="dv">1</span>, <span class="dv">0</span>)  </span>
+<span id="cb59-9"><a href="#cb59-9" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb59-10"><a href="#cb59-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb59-11"><a href="#cb59-11" aria-hidden="true" tabindex="-1"></a><span class="co"># Summarize the data to count the number of occurrences for each weather classification</span></span>
+<span id="cb59-12"><a href="#cb59-12" aria-hidden="true" tabindex="-1"></a>extreme_summary <span class="ot">&lt;-</span> weather_classified_binary <span class="sc">%&gt;%</span></span>
+<span id="cb59-13"><a href="#cb59-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(</span>
+<span id="cb59-14"><a href="#cb59-14" aria-hidden="true" tabindex="-1"></a>    <span class="at">Extreme_Cold =</span> <span class="fu">sum</span>(is_extreme_cold),</span>
+<span id="cb59-15"><a href="#cb59-15" aria-hidden="true" tabindex="-1"></a>    <span class="at">Extreme_Heat =</span> <span class="fu">sum</span>(is_extreme_heat),</span>
+<span id="cb59-16"><a href="#cb59-16" aria-hidden="true" tabindex="-1"></a>    <span class="at">Heavy_Precipitation =</span> <span class="fu">sum</span>(is_heavy_precipitation),</span>
+<span id="cb59-17"><a href="#cb59-17" aria-hidden="true" tabindex="-1"></a>    <span class="at">High_Wind =</span> <span class="fu">sum</span>(is_high_wind),</span>
+<span id="cb59-18"><a href="#cb59-18" aria-hidden="true" tabindex="-1"></a>    <span class="at">Normal =</span> <span class="fu">sum</span>(is_normal)</span>
+<span id="cb59-19"><a href="#cb59-19" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb59-20"><a href="#cb59-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb59-21"><a href="#cb59-21" aria-hidden="true" tabindex="-1"></a>extreme_summary</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>  Extreme_Cold Extreme_Heat Heavy_Precipitation High_Wind Normal
+1          238         4003                 471       631 216537</code></pre>
+</div>
+</div>
+</section>
+<section id="method-1-knn-modeling" class="level2">
+<h2 class="anchored" data-anchor-id="method-1-knn-modeling">Method 1: KNN Modeling</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb61"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb61-1"><a href="#cb61-1" aria-hidden="true" tabindex="-1"></a>weather_data <span class="ot">&lt;-</span> weather_classified_binary </span>
+<span id="cb61-2"><a href="#cb61-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb61-3"><a href="#cb61-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb61-4"><a href="#cb61-4" aria-hidden="true" tabindex="-1"></a>weather_data<span class="sc">$</span>extreme_type <span class="ot">&lt;-</span> <span class="fu">as.factor</span>(weather_data<span class="sc">$</span>extreme_type)</span>
+<span id="cb61-5"><a href="#cb61-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb61-6"><a href="#cb61-6" aria-hidden="true" tabindex="-1"></a>X <span class="ot">&lt;-</span> weather_data <span class="sc">%&gt;%</span></span>
+<span id="cb61-7"><a href="#cb61-7" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">select</span>(<span class="fu">where</span>(is.numeric))  </span>
+<span id="cb61-8"><a href="#cb61-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb61-9"><a href="#cb61-9" aria-hidden="true" tabindex="-1"></a>y <span class="ot">&lt;-</span> weather_data<span class="sc">$</span>extreme_type</span>
+<span id="cb61-10"><a href="#cb61-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb61-11"><a href="#cb61-11" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">123</span>)</span>
+<span id="cb61-12"><a href="#cb61-12" aria-hidden="true" tabindex="-1"></a>train_idx <span class="ot">&lt;-</span> <span class="fu">sample</span>(<span class="fu">nrow</span>(weather_data), <span class="fl">0.5</span> <span class="sc">*</span> <span class="fu">nrow</span>(weather_data))</span>
+<span id="cb61-13"><a href="#cb61-13" aria-hidden="true" tabindex="-1"></a>Xtrain <span class="ot">&lt;-</span> X[train_idx, ]</span>
+<span id="cb61-14"><a href="#cb61-14" aria-hidden="true" tabindex="-1"></a>Xtest <span class="ot">&lt;-</span> X[<span class="sc">-</span>train_idx, ]</span>
+<span id="cb61-15"><a href="#cb61-15" aria-hidden="true" tabindex="-1"></a>ytrain <span class="ot">&lt;-</span> y[train_idx]</span>
+<span id="cb61-16"><a href="#cb61-16" aria-hidden="true" tabindex="-1"></a>ytest <span class="ot">&lt;-</span> y[<span class="sc">-</span>train_idx]</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb62"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb62-1"><a href="#cb62-1" aria-hidden="true" tabindex="-1"></a><span class="co"># To speed up runtime</span></span>
+<span id="cb62-2"><a href="#cb62-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(FNN)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>
+Attaching package: 'FNN'</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>The following objects are masked from 'package:class':
+
+    knn, knn.cv</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb65"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb65-1"><a href="#cb65-1" aria-hidden="true" tabindex="-1"></a>knn_pred <span class="ot">&lt;-</span> <span class="fu">knn</span>(<span class="at">train =</span> Xtrain, <span class="at">test =</span> Xtest, <span class="at">cl =</span> ytrain, <span class="at">k =</span> <span class="dv">3</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb66"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb66-1"><a href="#cb66-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Try balancing</span></span>
+<span id="cb66-2"><a href="#cb66-2" aria-hidden="true" tabindex="-1"></a>conf_matrix <span class="ot">&lt;-</span> <span class="fu">table</span>(<span class="at">Predicted =</span> knn_pred, <span class="at">Actual =</span> ytest)</span>
+<span id="cb66-3"><a href="#cb66-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb66-4"><a href="#cb66-4" aria-hidden="true" tabindex="-1"></a>sensitivity_per_class <span class="ot">&lt;-</span> <span class="fu">diag</span>(conf_matrix) <span class="sc">/</span> <span class="fu">rowSums</span>(conf_matrix)</span>
+<span id="cb66-5"><a href="#cb66-5" aria-hidden="true" tabindex="-1"></a>specificity_per_class <span class="ot">&lt;-</span> (<span class="fu">rowSums</span>(conf_matrix) <span class="sc">-</span> <span class="fu">diag</span>(conf_matrix)) <span class="sc">/</span> <span class="fu">rowSums</span>(conf_matrix)</span>
+<span id="cb66-6"><a href="#cb66-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb66-7"><a href="#cb66-7" aria-hidden="true" tabindex="-1"></a>balanced_accuracy <span class="ot">&lt;-</span> <span class="fu">mean</span>((sensitivity_per_class <span class="sc">+</span> specificity_per_class) <span class="sc">/</span> <span class="dv">2</span>)</span>
+<span id="cb66-8"><a href="#cb66-8" aria-hidden="true" tabindex="-1"></a><span class="fu">round</span>(balanced_accuracy, <span class="dv">2</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 0.5</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb68"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb68-1"><a href="#cb68-1" aria-hidden="true" tabindex="-1"></a>accuracy_knn <span class="ot">&lt;-</span> <span class="fu">sum</span>(<span class="fu">diag</span>(conf_matrix)) <span class="sc">/</span> <span class="fu">sum</span>(conf_matrix)</span>
+<span id="cb68-2"><a href="#cb68-2" aria-hidden="true" tabindex="-1"></a><span class="fu">round</span>(accuracy_knn, <span class="dv">4</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 0.9847</code></pre>
+</div>
+</div>
+<p>Make 2 groups instead of each extreme weather classification (Normal &amp; Extreme Weather)</p>
+<p>Use KNN (K=3) to classify extreme weather</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb70"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb70-1"><a href="#cb70-1" aria-hidden="true" tabindex="-1"></a>weather_classified_binary<span class="sc">$</span>extreme_weather_binary <span class="ot">&lt;-</span> <span class="fu">ifelse</span>(weather_classified_binary<span class="sc">$</span>extreme_type <span class="sc">%in%</span> </span>
+<span id="cb70-2"><a href="#cb70-2" aria-hidden="true" tabindex="-1"></a>    <span class="fu">c</span>(<span class="st">"Extreme Cold"</span>, <span class="st">"Extreme Heat"</span>, <span class="st">"Heavy Precipitation"</span>, <span class="st">"High Wind"</span>), <span class="st">"Extreme Weather"</span>, <span class="st">"Normal"</span>)</span>
+<span id="cb70-3"><a href="#cb70-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb70-4"><a href="#cb70-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb70-5"><a href="#cb70-5" aria-hidden="true" tabindex="-1"></a>y <span class="ot">&lt;-</span> weather_classified_binary<span class="sc">$</span>extreme_weather_binary</span>
+<span id="cb70-6"><a href="#cb70-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb70-7"><a href="#cb70-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb70-8"><a href="#cb70-8" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">123</span>)</span>
+<span id="cb70-9"><a href="#cb70-9" aria-hidden="true" tabindex="-1"></a>train_idx <span class="ot">&lt;-</span> <span class="fu">sample</span>(<span class="fu">nrow</span>(weather_classified_binary), <span class="fl">0.5</span> <span class="sc">*</span> <span class="fu">nrow</span>(weather_classified_binary))</span>
+<span id="cb70-10"><a href="#cb70-10" aria-hidden="true" tabindex="-1"></a>Xtrain <span class="ot">&lt;-</span> X[train_idx, ]</span>
+<span id="cb70-11"><a href="#cb70-11" aria-hidden="true" tabindex="-1"></a>Xtest <span class="ot">&lt;-</span> X[<span class="sc">-</span>train_idx, ]</span>
+<span id="cb70-12"><a href="#cb70-12" aria-hidden="true" tabindex="-1"></a>ytrain <span class="ot">&lt;-</span> y[train_idx]</span>
+<span id="cb70-13"><a href="#cb70-13" aria-hidden="true" tabindex="-1"></a>ytest <span class="ot">&lt;-</span> y[<span class="sc">-</span>train_idx]</span>
+<span id="cb70-14"><a href="#cb70-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb70-15"><a href="#cb70-15" aria-hidden="true" tabindex="-1"></a>knn_pred <span class="ot">&lt;-</span> <span class="fu">knn</span>(<span class="at">train =</span> Xtrain, <span class="at">test =</span> Xtest, <span class="at">cl =</span> ytrain, <span class="at">k =</span> <span class="dv">3</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb71"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb71-1"><a href="#cb71-1" aria-hidden="true" tabindex="-1"></a>conf_matrix <span class="ot">&lt;-</span> <span class="fu">table</span>(<span class="at">Predicted =</span> knn_pred, <span class="at">Actual =</span> ytest)</span>
+<span id="cb71-2"><a href="#cb71-2" aria-hidden="true" tabindex="-1"></a>conf_matrix</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>                 Actual
+Predicted         Extreme Weather Normal
+  Extreme Weather            1246    298
+  Normal                     1400 107996</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb73"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb73-1"><a href="#cb73-1" aria-hidden="true" tabindex="-1"></a>accuracy <span class="ot">&lt;-</span> <span class="fu">sum</span>(knn_pred <span class="sc">==</span> ytest) <span class="sc">/</span> <span class="fu">length</span>(ytest)</span>
+<span id="cb73-2"><a href="#cb73-2" aria-hidden="true" tabindex="-1"></a>accuracy</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 0.9846944</code></pre>
+</div>
+</div>
+<p><strong>True Positives (TP)</strong> = 1246 (correctly predicted extreme)</p>
+<p><strong>False Positives (FP)</strong> = 298 (predicted extreme, actually normal)</p>
+<p><strong>False Negatives (FN)</strong> = 1400 (predicted normal, actually extreme)</p>
+<p><strong>True Negatives (TN)</strong> = 107996 (correctly predicted normal)</p>
+<p>Here we see an extremely high accuracy, which is due to a class imbalance. Because of this, we should try again with more balanced classes.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb75"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb75-1"><a href="#cb75-1" aria-hidden="true" tabindex="-1"></a><span class="co">#Undersample 'Normal' to match number of 'Extreme Weather' cases</span></span>
+<span id="cb75-2"><a href="#cb75-2" aria-hidden="true" tabindex="-1"></a>normal <span class="ot">&lt;-</span> weather_classified_binary <span class="sc">%&gt;%</span> <span class="fu">filter</span>(extreme_weather_binary <span class="sc">==</span> <span class="st">"Normal"</span>)</span>
+<span id="cb75-3"><a href="#cb75-3" aria-hidden="true" tabindex="-1"></a>extreme <span class="ot">&lt;-</span> weather_classified_binary <span class="sc">%&gt;%</span> <span class="fu">filter</span>(extreme_weather_binary <span class="sc">==</span> <span class="st">"Extreme Weather"</span>)</span>
+<span id="cb75-4"><a href="#cb75-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb75-5"><a href="#cb75-5" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">123</span>)</span>
+<span id="cb75-6"><a href="#cb75-6" aria-hidden="true" tabindex="-1"></a>normal_sample <span class="ot">&lt;-</span> normal <span class="sc">%&gt;%</span> <span class="fu">sample_n</span>(<span class="fu">nrow</span>(extreme))</span>
+<span id="cb75-7"><a href="#cb75-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb75-8"><a href="#cb75-8" aria-hidden="true" tabindex="-1"></a>balanced_data <span class="ot">&lt;-</span> <span class="fu">bind_rows</span>(extreme, normal_sample)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb76"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb76-1"><a href="#cb76-1" aria-hidden="true" tabindex="-1"></a><span class="co">#KNN Model wih balanced data </span></span>
+<span id="cb76-2"><a href="#cb76-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb76-3"><a href="#cb76-3" aria-hidden="true" tabindex="-1"></a>X <span class="ot">&lt;-</span> balanced_data <span class="sc">%&gt;%</span> dplyr<span class="sc">::</span><span class="fu">select</span>(<span class="fu">where</span>(is.numeric))</span>
+<span id="cb76-4"><a href="#cb76-4" aria-hidden="true" tabindex="-1"></a>y <span class="ot">&lt;-</span> balanced_data<span class="sc">$</span>extreme_weather_binary</span>
+<span id="cb76-5"><a href="#cb76-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb76-6"><a href="#cb76-6" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">123</span>)</span>
+<span id="cb76-7"><a href="#cb76-7" aria-hidden="true" tabindex="-1"></a>train_idx <span class="ot">&lt;-</span> <span class="fu">sample</span>(<span class="fu">nrow</span>(balanced_data), <span class="fl">0.7</span> <span class="sc">*</span> <span class="fu">nrow</span>(balanced_data))</span>
+<span id="cb76-8"><a href="#cb76-8" aria-hidden="true" tabindex="-1"></a>Xtrain <span class="ot">&lt;-</span> X[train_idx, ]</span>
+<span id="cb76-9"><a href="#cb76-9" aria-hidden="true" tabindex="-1"></a>Xtest <span class="ot">&lt;-</span> X[<span class="sc">-</span>train_idx, ]</span>
+<span id="cb76-10"><a href="#cb76-10" aria-hidden="true" tabindex="-1"></a>ytrain <span class="ot">&lt;-</span> y[train_idx]</span>
+<span id="cb76-11"><a href="#cb76-11" aria-hidden="true" tabindex="-1"></a>ytest <span class="ot">&lt;-</span> y[<span class="sc">-</span>train_idx]</span>
+<span id="cb76-12"><a href="#cb76-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb76-13"><a href="#cb76-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb76-14"><a href="#cb76-14" aria-hidden="true" tabindex="-1"></a>knn_pred <span class="ot">&lt;-</span> <span class="fu">knn</span>(<span class="at">train =</span> Xtrain, <span class="at">test =</span> Xtest, <span class="at">cl =</span> ytrain, <span class="at">k =</span> <span class="dv">3</span>)</span>
+<span id="cb76-15"><a href="#cb76-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb76-16"><a href="#cb76-16" aria-hidden="true" tabindex="-1"></a>conf_matrix_knn <span class="ot">&lt;-</span> <span class="fu">table</span>(<span class="at">Predicted =</span> knn_pred, <span class="at">Actual =</span> ytest)</span>
+<span id="cb76-17"><a href="#cb76-17" aria-hidden="true" tabindex="-1"></a>conf_matrix_knn</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>                 Actual
+Predicted         Extreme Weather Normal
+  Extreme Weather            1406    195
+  Normal                      163   1442</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb78"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb78-1"><a href="#cb78-1" aria-hidden="true" tabindex="-1"></a>accuracy <span class="ot">&lt;-</span> <span class="fu">sum</span>(knn_pred <span class="sc">==</span> ytest) <span class="sc">/</span> <span class="fu">length</span>(ytest)</span>
+<span id="cb78-2"><a href="#cb78-2" aria-hidden="true" tabindex="-1"></a>accuracy</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 0.8883344</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb80"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb80-1"><a href="#cb80-1" aria-hidden="true" tabindex="-1"></a><span class="co">#Find best K</span></span>
+<span id="cb80-2"><a href="#cb80-2" aria-hidden="true" tabindex="-1"></a>classification_rates <span class="ot">&lt;-</span> <span class="fu">rep</span>(<span class="cn">NA</span>, <span class="dv">20</span>)</span>
+<span id="cb80-3"><a href="#cb80-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb80-4"><a href="#cb80-4" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> (k <span class="cf">in</span> <span class="dv">1</span><span class="sc">:</span><span class="dv">20</span>) {</span>
+<span id="cb80-5"><a href="#cb80-5" aria-hidden="true" tabindex="-1"></a>  knn_predictions <span class="ot">&lt;-</span> <span class="fu">knn</span>(<span class="at">train =</span> Xtrain, <span class="at">test =</span> Xtest, <span class="at">cl =</span> ytrain, <span class="at">k =</span> k)</span>
+<span id="cb80-6"><a href="#cb80-6" aria-hidden="true" tabindex="-1"></a>  classification_rates[k] <span class="ot">&lt;-</span> <span class="fu">mean</span>(knn_predictions <span class="sc">==</span> ytest)</span>
+<span id="cb80-7"><a href="#cb80-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb80-8"><a href="#cb80-8" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb80-9"><a href="#cb80-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb80-10"><a href="#cb80-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb80-11"><a href="#cb80-11" aria-hidden="true" tabindex="-1"></a>k_3_rate <span class="ot">&lt;-</span> classification_rates[<span class="dv">3</span>]</span>
+<span id="cb80-12"><a href="#cb80-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb80-13"><a href="#cb80-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb80-14"><a href="#cb80-14" aria-hidden="true" tabindex="-1"></a>better_k <span class="ot">&lt;-</span> <span class="fu">which</span>(classification_rates <span class="sc">&gt;</span> k_3_rate)</span>
+<span id="cb80-15"><a href="#cb80-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb80-16"><a href="#cb80-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb80-17"><a href="#cb80-17" aria-hidden="true" tabindex="-1"></a>classification_rates</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code> [1] 0.8886463 0.8714910 0.8883344 0.8786650 0.8849033 0.8817842 0.8799127
+ [8] 0.8746101 0.8789769 0.8733624 0.8730505 0.8677480 0.8658765 0.8611978
+[15] 0.8615097 0.8605739 0.8546475 0.8555833 0.8521522 0.8527760</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb82"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb82-1"><a href="#cb82-1" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(<span class="dv">1</span><span class="sc">:</span><span class="dv">20</span>, classification_rates, <span class="at">type =</span> <span class="st">"b"</span>, <span class="at">pch =</span> <span class="dv">18</span>, <span class="at">col =</span> <span class="st">"blue"</span>,</span>
+<span id="cb82-2"><a href="#cb82-2" aria-hidden="true" tabindex="-1"></a>     <span class="at">xlab =</span> <span class="st">"K Value"</span>, <span class="at">ylab =</span> <span class="st">"Classification Rate"</span>,</span>
+<span id="cb82-3"><a href="#cb82-3" aria-hidden="true" tabindex="-1"></a>     <span class="at">main =</span> <span class="st">"K vs. Classification Rate"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p><img src="climate-classification_files/figure-html/unnamed-chunk-35-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<p>Here we see that as we increase K, the classification rate decreases, which we can expect due to what we have referred to as the “curse of dimensionality” which is when the number of features p is large there tends to be a deterioration in the performance of KNN.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb83"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb83-1"><a href="#cb83-1" aria-hidden="true" tabindex="-1"></a>knn_tp <span class="ot">&lt;-</span> conf_matrix_knn[<span class="st">"Extreme Weather"</span>, <span class="st">"Extreme Weather"</span>]</span>
+<span id="cb83-2"><a href="#cb83-2" aria-hidden="true" tabindex="-1"></a>knn_tn <span class="ot">&lt;-</span> conf_matrix_knn[<span class="st">"Normal"</span>, <span class="st">"Normal"</span>]</span>
+<span id="cb83-3"><a href="#cb83-3" aria-hidden="true" tabindex="-1"></a>knn_fp <span class="ot">&lt;-</span> conf_matrix_knn[<span class="st">"Extreme Weather"</span>, <span class="st">"Normal"</span>]</span>
+<span id="cb83-4"><a href="#cb83-4" aria-hidden="true" tabindex="-1"></a>knn_fn <span class="ot">&lt;-</span> conf_matrix_knn[<span class="st">"Normal"</span>, <span class="st">"Extreme Weather"</span>]</span>
+<span id="cb83-5"><a href="#cb83-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb83-6"><a href="#cb83-6" aria-hidden="true" tabindex="-1"></a>knn_precision <span class="ot">&lt;-</span> knn_tp <span class="sc">/</span> (knn_tp <span class="sc">+</span> knn_fp)</span>
+<span id="cb83-7"><a href="#cb83-7" aria-hidden="true" tabindex="-1"></a>knn_recall <span class="ot">&lt;-</span> knn_tp <span class="sc">/</span> (knn_tp <span class="sc">+</span> knn_fn)</span>
+<span id="cb83-8"><a href="#cb83-8" aria-hidden="true" tabindex="-1"></a>knn_f1 <span class="ot">&lt;-</span> <span class="dv">2</span> <span class="sc">*</span> (knn_precision <span class="sc">*</span> knn_recall) <span class="sc">/</span> (knn_precision <span class="sc">+</span> knn_recall)</span>
+<span id="cb83-9"><a href="#cb83-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb83-10"><a href="#cb83-10" aria-hidden="true" tabindex="-1"></a>knn_recall</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 0.8961122</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb85"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb85-1"><a href="#cb85-1" aria-hidden="true" tabindex="-1"></a>knn_precision</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 0.8782011</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb87"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb87-1"><a href="#cb87-1" aria-hidden="true" tabindex="-1"></a>knn_f1</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 0.8870662</code></pre>
+</div>
+</div>
+</section>
+<section id="method-2-logistic-regression" class="level2">
+<h2 class="anchored" data-anchor-id="method-2-logistic-regression">Method 2: Logistic Regression</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb89"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb89-1"><a href="#cb89-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Logistic regression model to predict extreme weather </span></span>
+<span id="cb89-2"><a href="#cb89-2" aria-hidden="true" tabindex="-1"></a>logit_data <span class="ot">&lt;-</span> weather_classified_binary <span class="sc">%&gt;%</span></span>
+<span id="cb89-3"><a href="#cb89-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">extreme_weather_binary =</span> <span class="fu">factor</span>(extreme_weather_binary))</span>
+<span id="cb89-4"><a href="#cb89-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb89-5"><a href="#cb89-5" aria-hidden="true" tabindex="-1"></a>X <span class="ot">&lt;-</span> logit_data <span class="sc">%&gt;%</span> </span>
+<span id="cb89-6"><a href="#cb89-6" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">select</span>(t2m_f, d2m_f, wind_speed_kmh, msl, sp, tp)</span>
+<span id="cb89-7"><a href="#cb89-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb89-8"><a href="#cb89-8" aria-hidden="true" tabindex="-1"></a>y <span class="ot">&lt;-</span> logit_data<span class="sc">$</span>extreme_weather_binary</span>
+<span id="cb89-9"><a href="#cb89-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb89-10"><a href="#cb89-10" aria-hidden="true" tabindex="-1"></a>logit_df <span class="ot">&lt;-</span> <span class="fu">cbind</span>(X, <span class="at">extreme_weather_binary =</span> y)</span>
+<span id="cb89-11"><a href="#cb89-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb89-12"><a href="#cb89-12" aria-hidden="true" tabindex="-1"></a>logit_model <span class="ot">&lt;-</span> <span class="fu">glm</span>(extreme_weather_binary <span class="sc">~</span> ., <span class="at">data =</span> logit_df, <span class="at">family =</span> binomial)</span>
+<span id="cb89-13"><a href="#cb89-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb89-14"><a href="#cb89-14" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(logit_model)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+Call:
+glm(formula = extreme_weather_binary ~ ., family = binomial, 
+    data = logit_df)
+
+Coefficients:
+                 Estimate Std. Error z value Pr(&gt;|z|)    
+(Intercept)    -9.599e+00  3.776e+00  -2.542    0.011 *  
+t2m_f          -6.726e-01  7.334e-03 -91.708   &lt;2e-16 ***
+d2m_f           4.399e-02  2.779e-03  15.828   &lt;2e-16 ***
+wind_speed_kmh -1.382e-01  4.174e-03 -33.113   &lt;2e-16 ***
+msl            -3.535e-01  4.412e-03 -80.131   &lt;2e-16 ***
+sp              3.576e-01  4.462e-03  80.144   &lt;2e-16 ***
+tp             -1.356e+03  2.222e+01 -61.045   &lt;2e-16 ***
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+(Dispersion parameter for binomial family taken to be 1)
+
+    Null deviance: 50376  on 221879  degrees of freedom
+Residual deviance: 19995  on 221873  degrees of freedom
+AIC: 20009
+
+Number of Fisher Scoring iterations: 9</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb91"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb91-1"><a href="#cb91-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Generate predictions and evaluate model accuracy</span></span>
+<span id="cb91-2"><a href="#cb91-2" aria-hidden="true" tabindex="-1"></a>logit_probs <span class="ot">&lt;-</span> <span class="fu">predict</span>(logit_model, <span class="at">type =</span> <span class="st">"response"</span>)</span>
+<span id="cb91-3"><a href="#cb91-3" aria-hidden="true" tabindex="-1"></a>logit_preds <span class="ot">&lt;-</span> <span class="fu">ifelse</span>(logit_probs <span class="sc">&gt;</span> <span class="fl">0.5</span>, <span class="st">"Extreme Weather"</span>, <span class="st">"Normal"</span>)</span>
+<span id="cb91-4"><a href="#cb91-4" aria-hidden="true" tabindex="-1"></a>logit_preds <span class="ot">&lt;-</span> <span class="fu">factor</span>(logit_preds, <span class="at">levels =</span> <span class="fu">levels</span>(y))</span>
+<span id="cb91-5"><a href="#cb91-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb91-6"><a href="#cb91-6" aria-hidden="true" tabindex="-1"></a>conf_matrix <span class="ot">&lt;-</span> <span class="fu">table</span>(<span class="at">Predicted =</span> logit_preds, <span class="at">Actual =</span> y)</span>
+<span id="cb91-7"><a href="#cb91-7" aria-hidden="true" tabindex="-1"></a>conf_matrix</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>                 Actual
+Predicted         Extreme Weather Normal
+  Extreme Weather            2669 215862
+  Normal                     2674    675</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb93"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb93-1"><a href="#cb93-1" aria-hidden="true" tabindex="-1"></a><span class="fu">mean</span>(logit_preds <span class="sc">==</span> y)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 0.01507121</code></pre>
+</div>
+</div>
+<p>The logistic regression model shows significant class imbalance, with the model predicting nearly all cases as “Extreme Weather.” Despite strong statistical significance in the coefficients, the overall accuracy is only 1.5%, indicating poor predictive performance. This suggests that the model is not effectively distinguishing between normal and extreme weather, and rebalancing the dataset or applying class weights is necessary for better classification.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb95"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb95-1"><a href="#cb95-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Rebalance dataset by downsampling the majority class</span></span>
+<span id="cb95-2"><a href="#cb95-2" aria-hidden="true" tabindex="-1"></a>extreme <span class="ot">&lt;-</span> logit_df <span class="sc">%&gt;%</span> <span class="fu">filter</span>(extreme_weather_binary <span class="sc">==</span> <span class="st">"Extreme Weather"</span>)</span>
+<span id="cb95-3"><a href="#cb95-3" aria-hidden="true" tabindex="-1"></a>normal <span class="ot">&lt;-</span> logit_df <span class="sc">%&gt;%</span> <span class="fu">filter</span>(extreme_weather_binary <span class="sc">==</span> <span class="st">"Normal"</span>) <span class="sc">%&gt;%</span> <span class="fu">sample_n</span>(<span class="fu">nrow</span>(extreme))</span>
+<span id="cb95-4"><a href="#cb95-4" aria-hidden="true" tabindex="-1"></a>balanced_df <span class="ot">&lt;-</span> <span class="fu">bind_rows</span>(extreme, normal)</span>
+<span id="cb95-5"><a href="#cb95-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb95-6"><a href="#cb95-6" aria-hidden="true" tabindex="-1"></a><span class="co"># Fit logistic regression model on balanced data</span></span>
+<span id="cb95-7"><a href="#cb95-7" aria-hidden="true" tabindex="-1"></a>logit_model_bal <span class="ot">&lt;-</span> <span class="fu">glm</span>(extreme_weather_binary <span class="sc">~</span> ., <span class="at">data =</span> balanced_df, <span class="at">family =</span> binomial)</span>
+<span id="cb95-8"><a href="#cb95-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb95-9"><a href="#cb95-9" aria-hidden="true" tabindex="-1"></a><span class="co"># Generate predictions and evaluate</span></span>
+<span id="cb95-10"><a href="#cb95-10" aria-hidden="true" tabindex="-1"></a>logit_probs <span class="ot">&lt;-</span> <span class="fu">predict</span>(logit_model_bal, <span class="at">type =</span> <span class="st">"response"</span>)</span>
+<span id="cb95-11"><a href="#cb95-11" aria-hidden="true" tabindex="-1"></a>logit_preds <span class="ot">&lt;-</span> <span class="fu">ifelse</span>(logit_probs <span class="sc">&gt;</span> <span class="fl">0.5</span>, <span class="st">"Extreme Weather"</span>, <span class="st">"Normal"</span>)</span>
+<span id="cb95-12"><a href="#cb95-12" aria-hidden="true" tabindex="-1"></a>logit_preds <span class="ot">&lt;-</span> <span class="fu">factor</span>(logit_preds, <span class="at">levels =</span> <span class="fu">levels</span>(balanced_df<span class="sc">$</span>extreme_weather_binary))</span>
+<span id="cb95-13"><a href="#cb95-13" aria-hidden="true" tabindex="-1"></a>conf_matrix_logit <span class="ot">&lt;-</span> <span class="fu">table</span>(<span class="at">Predicted =</span> logit_preds, <span class="at">Actual =</span> balanced_df<span class="sc">$</span>extreme_weather_binary)</span>
+<span id="cb95-14"><a href="#cb95-14" aria-hidden="true" tabindex="-1"></a>conf_matrix_logit</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>                 Actual
+Predicted         Extreme Weather Normal
+  Extreme Weather             231   4893
+  Normal                     5112    450</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb97"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb97-1"><a href="#cb97-1" aria-hidden="true" tabindex="-1"></a><span class="fu">mean</span>(logit_preds <span class="sc">==</span> balanced_df<span class="sc">$</span>extreme_weather_binary)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 0.06372824</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb99"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb99-1"><a href="#cb99-1" aria-hidden="true" tabindex="-1"></a>logit_tp <span class="ot">&lt;-</span> conf_matrix_logit[<span class="st">"Extreme Weather"</span>, <span class="st">"Extreme Weather"</span>]</span>
+<span id="cb99-2"><a href="#cb99-2" aria-hidden="true" tabindex="-1"></a>logit_tn <span class="ot">&lt;-</span> conf_matrix_logit[<span class="st">"Normal"</span>, <span class="st">"Normal"</span>]</span>
+<span id="cb99-3"><a href="#cb99-3" aria-hidden="true" tabindex="-1"></a>logit_fp <span class="ot">&lt;-</span> conf_matrix_logit[<span class="st">"Extreme Weather"</span>, <span class="st">"Normal"</span>]</span>
+<span id="cb99-4"><a href="#cb99-4" aria-hidden="true" tabindex="-1"></a>logit_fn <span class="ot">&lt;-</span> conf_matrix_logit[<span class="st">"Normal"</span>, <span class="st">"Extreme Weather"</span>]</span>
+<span id="cb99-5"><a href="#cb99-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb99-6"><a href="#cb99-6" aria-hidden="true" tabindex="-1"></a>logit_precision <span class="ot">&lt;-</span> logit_tp <span class="sc">/</span> (logit_tp <span class="sc">+</span> logit_fp)</span>
+<span id="cb99-7"><a href="#cb99-7" aria-hidden="true" tabindex="-1"></a>logit_recall <span class="ot">&lt;-</span> logit_tp <span class="sc">/</span> (logit_tp <span class="sc">+</span> logit_fn)</span>
+<span id="cb99-8"><a href="#cb99-8" aria-hidden="true" tabindex="-1"></a>logit_f1 <span class="ot">&lt;-</span> <span class="dv">2</span> <span class="sc">*</span> (logit_precision <span class="sc">*</span> logit_recall) <span class="sc">/</span> (logit_precision <span class="sc">+</span> logit_recall)</span>
+<span id="cb99-9"><a href="#cb99-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb99-10"><a href="#cb99-10" aria-hidden="true" tabindex="-1"></a>logit_recall</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 0.04323414</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb101"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb101-1"><a href="#cb101-1" aria-hidden="true" tabindex="-1"></a>logit_precision</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 0.04508197</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb103"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb103-1"><a href="#cb103-1" aria-hidden="true" tabindex="-1"></a>logit_f1</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 0.04413872</code></pre>
+</div>
+</div>
+<p>After rebalancing the dataset to address class imbalance, the logistic regression model still performed poorly, with only 6.4% accuracy. The confusion matrix shows that the model continues to misclassify most observations, suggesting that the relationship between predictors and extreme weather is likely non-linear or too complex for logistic regression to capture. This indicates that more flexible models, such as QDA, LDA, or tree-based methods, may be better suited for this classification task.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb105"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb105-1"><a href="#cb105-1" aria-hidden="true" tabindex="-1"></a><span class="co">#ROC Curve and Error Evaluation </span></span>
+<span id="cb105-2"><a href="#cb105-2" aria-hidden="true" tabindex="-1"></a>prob <span class="ot">&lt;-</span> <span class="fu">predict</span>(logit_model_bal, <span class="at">type =</span> <span class="st">"response"</span>)</span>
+<span id="cb105-3"><a href="#cb105-3" aria-hidden="true" tabindex="-1"></a>actual <span class="ot">&lt;-</span> <span class="fu">ifelse</span>(balanced_df<span class="sc">$</span>extreme_weather_binary <span class="sc">==</span> <span class="st">"Extreme Weather"</span>, <span class="dv">1</span>, <span class="dv">0</span>)</span>
+<span id="cb105-4"><a href="#cb105-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb105-5"><a href="#cb105-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb105-6"><a href="#cb105-6" aria-hidden="true" tabindex="-1"></a>threshold <span class="ot">&lt;-</span> <span class="fu">seq</span>(<span class="dv">0</span>, <span class="dv">1</span>, <span class="fl">0.01</span>)</span>
+<span id="cb105-7"><a href="#cb105-7" aria-hidden="true" tabindex="-1"></a>TPR <span class="ot">&lt;-</span> FPR <span class="ot">&lt;-</span> err.rate <span class="ot">&lt;-</span> <span class="fu">rep</span>(<span class="dv">0</span>, <span class="fu">length</span>(threshold))</span>
+<span id="cb105-8"><a href="#cb105-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb105-9"><a href="#cb105-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb105-10"><a href="#cb105-10" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> (i <span class="cf">in</span> <span class="fu">seq_along</span>(threshold)) {</span>
+<span id="cb105-11"><a href="#cb105-11" aria-hidden="true" tabindex="-1"></a>  Yhat <span class="ot">&lt;-</span> <span class="fu">ifelse</span>(prob <span class="sc">&gt;=</span> threshold[i], <span class="dv">1</span>, <span class="dv">0</span>)</span>
+<span id="cb105-12"><a href="#cb105-12" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb105-13"><a href="#cb105-13" aria-hidden="true" tabindex="-1"></a>  err.rate[i] <span class="ot">&lt;-</span> <span class="fu">mean</span>(Yhat <span class="sc">!=</span> actual)</span>
+<span id="cb105-14"><a href="#cb105-14" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb105-15"><a href="#cb105-15" aria-hidden="true" tabindex="-1"></a>  TPR[i] <span class="ot">&lt;-</span> <span class="fu">sum</span>(Yhat <span class="sc">==</span> <span class="dv">1</span> <span class="sc">&amp;</span> actual <span class="sc">==</span> <span class="dv">1</span>) <span class="sc">/</span> <span class="fu">sum</span>(actual <span class="sc">==</span> <span class="dv">1</span>)</span>
+<span id="cb105-16"><a href="#cb105-16" aria-hidden="true" tabindex="-1"></a>  FPR[i] <span class="ot">&lt;-</span> <span class="fu">sum</span>(Yhat <span class="sc">==</span> <span class="dv">1</span> <span class="sc">&amp;</span> actual <span class="sc">==</span> <span class="dv">0</span>) <span class="sc">/</span> <span class="fu">sum</span>(actual <span class="sc">==</span> <span class="dv">0</span>)</span>
+<span id="cb105-17"><a href="#cb105-17" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb105-18"><a href="#cb105-18" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb105-19"><a href="#cb105-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb105-20"><a href="#cb105-20" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(<span class="fu">tibble</span>(threshold, err.rate), <span class="fu">aes</span>(threshold, err.rate)) <span class="sc">+</span> </span>
+<span id="cb105-21"><a href="#cb105-21" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>() <span class="sc">+</span></span>
+<span id="cb105-22"><a href="#cb105-22" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">x =</span> <span class="st">"Threshold"</span>, <span class="at">y =</span> <span class="st">"Error Rate"</span>, <span class="at">title =</span> <span class="st">"Error Rate vs. Threshold"</span>) <span class="sc">+</span></span>
+<span id="cb105-23"><a href="#cb105-23" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p><img src="climate-classification_files/figure-html/unnamed-chunk-41-1.png" class="img-fluid" width="672"></p>
+</div>
+<div class="sourceCode cell-code" id="cb106"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb106-1"><a href="#cb106-1" aria-hidden="true" tabindex="-1"></a>best_threshold <span class="ot">&lt;-</span> threshold[<span class="fu">which.min</span>(err.rate)]</span>
+<span id="cb106-2"><a href="#cb106-2" aria-hidden="true" tabindex="-1"></a>worst_threshold <span class="ot">&lt;-</span> threshold[<span class="fu">which.max</span>(err.rate)]</span>
+<span id="cb106-3"><a href="#cb106-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb106-4"><a href="#cb106-4" aria-hidden="true" tabindex="-1"></a>best_TPR <span class="ot">&lt;-</span> TPR[<span class="fu">which.min</span>(err.rate)]</span>
+<span id="cb106-5"><a href="#cb106-5" aria-hidden="true" tabindex="-1"></a>best_FPR <span class="ot">&lt;-</span> FPR[<span class="fu">which.min</span>(err.rate)]</span>
+<span id="cb106-6"><a href="#cb106-6" aria-hidden="true" tabindex="-1"></a>worst_TPR <span class="ot">&lt;-</span> TPR[<span class="fu">which.max</span>(err.rate)]</span>
+<span id="cb106-7"><a href="#cb106-7" aria-hidden="true" tabindex="-1"></a>worst_FPR <span class="ot">&lt;-</span> FPR[<span class="fu">which.max</span>(err.rate)]</span>
+<span id="cb106-8"><a href="#cb106-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb106-9"><a href="#cb106-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb106-10"><a href="#cb106-10" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(<span class="fu">tibble</span>(TPR, FPR), <span class="fu">aes</span>(FPR, TPR)) <span class="sc">+</span> </span>
+<span id="cb106-11"><a href="#cb106-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>() <span class="sc">+</span> </span>
+<span id="cb106-12"><a href="#cb106-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_abline</span>(<span class="at">color =</span> <span class="st">"red"</span>, <span class="at">lty =</span> <span class="dv">2</span>) <span class="sc">+</span></span>
+<span id="cb106-13"><a href="#cb106-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">x =</span> <span class="st">"False Positive Rate"</span>, <span class="at">y =</span> <span class="st">"True Positive Rate"</span>, <span class="at">title =</span> <span class="st">"ROC Curve"</span>) <span class="sc">+</span></span>
+<span id="cb106-14"><a href="#cb106-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p><img src="climate-classification_files/figure-html/unnamed-chunk-41-2.png" class="img-fluid" width="672"></p>
+</div>
+<div class="sourceCode cell-code" id="cb107"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb107-1"><a href="#cb107-1" aria-hidden="true" tabindex="-1"></a>best_threshold</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 0</code></pre>
+</div>
+</div>
+<p>As we mentioned before, and reemphasized by what we see here with the ROC curve and error rate graphs, it does not seem Logistic Regression is a strong method to fit our data. Especially given this upside own U shape we see, that possibly suggests that the relationship between the predictors and the outcome is more complex than logistic regression can handle. We may need more flexible models that can capture this data.</p>
+</section>
+<section id="method-3-qdalda" class="level2">
+<h2 class="anchored" data-anchor-id="method-3-qdalda">Method 3: QDA/LDA</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb109"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb109-1"><a href="#cb109-1" aria-hidden="true" tabindex="-1"></a><span class="co"># LDA</span></span>
+<span id="cb109-2"><a href="#cb109-2" aria-hidden="true" tabindex="-1"></a>lda_model <span class="ot">&lt;-</span> <span class="fu">lda</span>(extreme_weather_binary <span class="sc">~</span> ., <span class="at">data =</span> balanced_df)</span>
+<span id="cb109-3"><a href="#cb109-3" aria-hidden="true" tabindex="-1"></a>lda_preds <span class="ot">&lt;-</span> <span class="fu">predict</span>(lda_model)<span class="sc">$</span>class</span>
+<span id="cb109-4"><a href="#cb109-4" aria-hidden="true" tabindex="-1"></a>lda_acc <span class="ot">&lt;-</span> <span class="fu">mean</span>(lda_preds <span class="sc">==</span> balanced_df<span class="sc">$</span>extreme_weather_binary)</span>
+<span id="cb109-5"><a href="#cb109-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb109-6"><a href="#cb109-6" aria-hidden="true" tabindex="-1"></a><span class="co"># QDA</span></span>
+<span id="cb109-7"><a href="#cb109-7" aria-hidden="true" tabindex="-1"></a>qda_model <span class="ot">&lt;-</span> <span class="fu">qda</span>(extreme_weather_binary <span class="sc">~</span> ., <span class="at">data =</span> balanced_df)</span>
+<span id="cb109-8"><a href="#cb109-8" aria-hidden="true" tabindex="-1"></a>qda_preds <span class="ot">&lt;-</span> <span class="fu">predict</span>(qda_model)<span class="sc">$</span>class</span>
+<span id="cb109-9"><a href="#cb109-9" aria-hidden="true" tabindex="-1"></a>qda_acc <span class="ot">&lt;-</span> <span class="fu">mean</span>(qda_preds <span class="sc">==</span> balanced_df<span class="sc">$</span>extreme_weather_binary)</span>
+<span id="cb109-10"><a href="#cb109-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb109-11"><a href="#cb109-11" aria-hidden="true" tabindex="-1"></a><span class="co"># Output accuracies</span></span>
+<span id="cb109-12"><a href="#cb109-12" aria-hidden="true" tabindex="-1"></a>lda_acc</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 0.919708</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb111"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb111-1"><a href="#cb111-1" aria-hidden="true" tabindex="-1"></a>qda_acc</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 0.9399214</code></pre>
+</div>
+</div>
+<p>The LDA and QDA models performed significantly better than logistic regression, with classification accuracies of approximately&nbsp;<strong>91.97%</strong>&nbsp;and&nbsp;<strong>93.99%</strong>, respectively. This improvement suggests that the relationship between features and extreme weather events is non-linear and better captured by flexible, distribution-based models like LDA and QDA. These results indicate that QDA, in particular, may be a strong candidate for classifying extreme weather in this dataset. This aligns with our previous findings, given that QDA is a more flexible model and may be able to capture our data better than other models.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb113"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb113-1"><a href="#cb113-1" aria-hidden="true" tabindex="-1"></a><span class="co"># GGpairs </span></span>
+<span id="cb113-2"><a href="#cb113-2" aria-hidden="true" tabindex="-1"></a><span class="fu">ggpairs</span>(balanced_df, <span class="at">columns =</span> <span class="dv">1</span><span class="sc">:</span>(<span class="fu">ncol</span>(balanced_df)<span class="sc">-</span><span class="dv">1</span>), </span>
+<span id="cb113-3"><a href="#cb113-3" aria-hidden="true" tabindex="-1"></a>        <span class="fu">aes</span>(<span class="at">color =</span> extreme_weather_binary, <span class="at">alpha =</span> <span class="fl">0.5</span>))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p><img src="climate-classification_files/figure-html/unnamed-chunk-43-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb114"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb114-1"><a href="#cb114-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Confusion Matrices for LDA And QDA</span></span>
+<span id="cb114-2"><a href="#cb114-2" aria-hidden="true" tabindex="-1"></a>lda_conf_matrix <span class="ot">&lt;-</span> <span class="fu">table</span>(<span class="at">Predicted =</span> lda_preds, <span class="at">Actual =</span> balanced_df<span class="sc">$</span>extreme_weather_binary)</span>
+<span id="cb114-3"><a href="#cb114-3" aria-hidden="true" tabindex="-1"></a>lda_conf_matrix</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>                 Actual
+Predicted         Extreme Weather Normal
+  Extreme Weather            5129    644
+  Normal                      214   4699</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb116"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb116-1"><a href="#cb116-1" aria-hidden="true" tabindex="-1"></a>qda_conf_matrix <span class="ot">&lt;-</span> <span class="fu">table</span>(<span class="at">Predicted =</span> qda_preds, <span class="at">Actual =</span> balanced_df<span class="sc">$</span>extreme_weather_binary)</span>
+<span id="cb116-2"><a href="#cb116-2" aria-hidden="true" tabindex="-1"></a>qda_conf_matrix</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>                 Actual
+Predicted         Extreme Weather Normal
+  Extreme Weather            5080    379
+  Normal                      263   4964</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb118"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb118-1"><a href="#cb118-1" aria-hidden="true" tabindex="-1"></a><span class="co">#More metrics</span></span>
+<span id="cb118-2"><a href="#cb118-2" aria-hidden="true" tabindex="-1"></a>lda_tp <span class="ot">&lt;-</span> lda_conf_matrix[<span class="st">"Extreme Weather"</span>, <span class="st">"Extreme Weather"</span>]</span>
+<span id="cb118-3"><a href="#cb118-3" aria-hidden="true" tabindex="-1"></a>lda_tn <span class="ot">&lt;-</span> lda_conf_matrix[<span class="st">"Normal"</span>, <span class="st">"Normal"</span>]</span>
+<span id="cb118-4"><a href="#cb118-4" aria-hidden="true" tabindex="-1"></a>lda_fp <span class="ot">&lt;-</span> lda_conf_matrix[<span class="st">"Extreme Weather"</span>, <span class="st">"Normal"</span>]</span>
+<span id="cb118-5"><a href="#cb118-5" aria-hidden="true" tabindex="-1"></a>lda_fn <span class="ot">&lt;-</span> lda_conf_matrix[<span class="st">"Normal"</span>, <span class="st">"Extreme Weather"</span>]</span>
+<span id="cb118-6"><a href="#cb118-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb118-7"><a href="#cb118-7" aria-hidden="true" tabindex="-1"></a>lda_precision <span class="ot">&lt;-</span> lda_tp <span class="sc">/</span> (lda_tp <span class="sc">+</span> lda_fp)</span>
+<span id="cb118-8"><a href="#cb118-8" aria-hidden="true" tabindex="-1"></a>lda_recall <span class="ot">&lt;-</span> lda_tp <span class="sc">/</span> (lda_tp <span class="sc">+</span> lda_fn)</span>
+<span id="cb118-9"><a href="#cb118-9" aria-hidden="true" tabindex="-1"></a>lda_f1 <span class="ot">&lt;-</span> <span class="dv">2</span> <span class="sc">*</span> (lda_precision <span class="sc">*</span> lda_recall) <span class="sc">/</span> (lda_precision <span class="sc">+</span> lda_recall)</span>
+<span id="cb118-10"><a href="#cb118-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb118-11"><a href="#cb118-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb118-12"><a href="#cb118-12" aria-hidden="true" tabindex="-1"></a>qda_tp <span class="ot">&lt;-</span> qda_conf_matrix[<span class="st">"Extreme Weather"</span>, <span class="st">"Extreme Weather"</span>]</span>
+<span id="cb118-13"><a href="#cb118-13" aria-hidden="true" tabindex="-1"></a>qda_tn <span class="ot">&lt;-</span> qda_conf_matrix[<span class="st">"Normal"</span>, <span class="st">"Normal"</span>]</span>
+<span id="cb118-14"><a href="#cb118-14" aria-hidden="true" tabindex="-1"></a>qda_fp <span class="ot">&lt;-</span> qda_conf_matrix[<span class="st">"Extreme Weather"</span>, <span class="st">"Normal"</span>]</span>
+<span id="cb118-15"><a href="#cb118-15" aria-hidden="true" tabindex="-1"></a>qda_fn <span class="ot">&lt;-</span> qda_conf_matrix[<span class="st">"Normal"</span>, <span class="st">"Extreme Weather"</span>]</span>
+<span id="cb118-16"><a href="#cb118-16" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb118-17"><a href="#cb118-17" aria-hidden="true" tabindex="-1"></a>qda_precision <span class="ot">&lt;-</span> qda_tp <span class="sc">/</span> (qda_tp <span class="sc">+</span> qda_fp)</span>
+<span id="cb118-18"><a href="#cb118-18" aria-hidden="true" tabindex="-1"></a>qda_recall <span class="ot">&lt;-</span> qda_tp <span class="sc">/</span> (qda_tp <span class="sc">+</span> qda_fn)</span>
+<span id="cb118-19"><a href="#cb118-19" aria-hidden="true" tabindex="-1"></a>qda_f1 <span class="ot">&lt;-</span> <span class="dv">2</span> <span class="sc">*</span> (qda_precision <span class="sc">*</span> qda_recall) <span class="sc">/</span> (qda_precision <span class="sc">+</span> qda_recall)</span>
+<span id="cb118-20"><a href="#cb118-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb118-21"><a href="#cb118-21" aria-hidden="true" tabindex="-1"></a>lda_precision</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 0.8884462</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb120"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb120-1"><a href="#cb120-1" aria-hidden="true" tabindex="-1"></a>lda_recall</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 0.9599476</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb122"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb122-1"><a href="#cb122-1" aria-hidden="true" tabindex="-1"></a>lda_f1</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 0.922814</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb124"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb124-1"><a href="#cb124-1" aria-hidden="true" tabindex="-1"></a>qda_precision</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 0.9305734</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb126"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb126-1"><a href="#cb126-1" aria-hidden="true" tabindex="-1"></a>qda_recall</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 0.9507767</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb128"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb128-1"><a href="#cb128-1" aria-hidden="true" tabindex="-1"></a>qda_f1</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 0.9405666</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb130"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb130-1"><a href="#cb130-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Get predicted probabilities for the Extreme Weather class</span></span>
+<span id="cb130-2"><a href="#cb130-2" aria-hidden="true" tabindex="-1"></a>lda_probs <span class="ot">&lt;-</span> <span class="fu">predict</span>(lda_model, <span class="at">newdata =</span> balanced_df)<span class="sc">$</span>posterior[, <span class="st">"Extreme Weather"</span>]</span>
+<span id="cb130-3"><a href="#cb130-3" aria-hidden="true" tabindex="-1"></a>qda_probs <span class="ot">&lt;-</span> <span class="fu">predict</span>(qda_model, <span class="at">newdata =</span> balanced_df)<span class="sc">$</span>posterior[, <span class="st">"Extreme Weather"</span>]</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb131"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb131-1"><a href="#cb131-1" aria-hidden="true" tabindex="-1"></a>true_labels <span class="ot">&lt;-</span> <span class="fu">factor</span>(balanced_df<span class="sc">$</span>extreme_weather_binary, <span class="at">levels =</span> <span class="fu">c</span>(<span class="st">"Normal"</span>, <span class="st">"Extreme Weather"</span>))</span>
+<span id="cb131-2"><a href="#cb131-2" aria-hidden="true" tabindex="-1"></a>positive_class <span class="ot">&lt;-</span> <span class="st">"Extreme Weather"</span></span>
+<span id="cb131-3"><a href="#cb131-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb131-4"><a href="#cb131-4" aria-hidden="true" tabindex="-1"></a><span class="co">#LDA</span></span>
+<span id="cb131-5"><a href="#cb131-5" aria-hidden="true" tabindex="-1"></a>threshold_lda <span class="ot">&lt;-</span> <span class="fu">seq</span>(<span class="dv">0</span>, <span class="dv">1</span>, <span class="fl">0.01</span>)</span>
+<span id="cb131-6"><a href="#cb131-6" aria-hidden="true" tabindex="-1"></a>TPR_lda <span class="ot">&lt;-</span> FPR_lda <span class="ot">&lt;-</span> err_rate_lda <span class="ot">&lt;-</span> <span class="fu">rep</span>(<span class="dv">0</span>, <span class="fu">length</span>(threshold_lda))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb132"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb132-1"><a href="#cb132-1" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> (i <span class="cf">in</span> <span class="fu">seq_along</span>(threshold_lda)) {</span>
+<span id="cb132-2"><a href="#cb132-2" aria-hidden="true" tabindex="-1"></a>  Yhat_lda <span class="ot">&lt;-</span> <span class="fu">ifelse</span>(lda_probs <span class="sc">&gt;=</span> threshold_lda[[i]], positive_class, <span class="st">"Normal"</span>)</span>
+<span id="cb132-3"><a href="#cb132-3" aria-hidden="true" tabindex="-1"></a>  Yhat_lda_factor <span class="ot">&lt;-</span> <span class="fu">factor</span>(Yhat_lda, <span class="at">levels =</span> <span class="fu">c</span>(<span class="st">"Normal"</span>, <span class="st">"Extreme Weather"</span>))</span>
+<span id="cb132-4"><a href="#cb132-4" aria-hidden="true" tabindex="-1"></a>  err_rate_lda[i] <span class="ot">&lt;-</span> <span class="fu">mean</span>(Yhat_lda_factor <span class="sc">!=</span> true_labels)</span>
+<span id="cb132-5"><a href="#cb132-5" aria-hidden="true" tabindex="-1"></a>  TPR_lda[i] <span class="ot">&lt;-</span> <span class="fu">sum</span>(Yhat_lda <span class="sc">==</span> positive_class <span class="sc">&amp;</span> true_labels <span class="sc">==</span> positive_class) <span class="sc">/</span> <span class="fu">sum</span>(true_labels <span class="sc">==</span> positive_class)</span>
+<span id="cb132-6"><a href="#cb132-6" aria-hidden="true" tabindex="-1"></a>  FPR_lda[i] <span class="ot">&lt;-</span> <span class="fu">sum</span>(Yhat_lda <span class="sc">==</span> positive_class <span class="sc">&amp;</span> true_labels <span class="sc">==</span> <span class="st">"Normal"</span>) <span class="sc">/</span> <span class="fu">sum</span>(true_labels <span class="sc">==</span> <span class="st">"Normal"</span>)</span>
+<span id="cb132-7"><a href="#cb132-7" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb132-8"><a href="#cb132-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb132-9"><a href="#cb132-9" aria-hidden="true" tabindex="-1"></a><span class="co"># Plot Error Rate vs. Threshold for LDA</span></span>
+<span id="cb132-10"><a href="#cb132-10" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(threshold_lda, err_rate_lda, <span class="at">type =</span> <span class="st">"p"</span>, <span class="at">xlab =</span> <span class="st">"Threshold (Probability of Extreme Weather)"</span>, <span class="at">ylab =</span> <span class="st">"Error Rate"</span>,</span>
+<span id="cb132-11"><a href="#cb132-11" aria-hidden="true" tabindex="-1"></a>     <span class="at">main =</span> <span class="st">"LDA: Error Rate vs. Threshold"</span>, <span class="at">pch =</span> <span class="dv">16</span>, <span class="at">cex =</span> <span class="fl">0.8</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p><img src="climate-classification_files/figure-html/unnamed-chunk-48-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb133"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb133-1"><a href="#cb133-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Plot ROC Curve for LDA</span></span>
+<span id="cb133-2"><a href="#cb133-2" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(FPR_lda, TPR_lda, <span class="at">type =</span> <span class="st">"p"</span>, <span class="at">xlab =</span> <span class="st">"False Positive Rate"</span>, <span class="at">ylab =</span> <span class="st">"True Positive Rate"</span>,</span>
+<span id="cb133-3"><a href="#cb133-3" aria-hidden="true" tabindex="-1"></a>     <span class="at">main =</span> <span class="st">"LDA: ROC Curve"</span>, <span class="at">pch =</span> <span class="dv">16</span>, <span class="at">cex =</span> <span class="fl">0.8</span>, <span class="at">xlim =</span> <span class="fu">c</span>(<span class="dv">0</span>, <span class="dv">1</span>), <span class="at">ylim =</span> <span class="fu">c</span>(<span class="dv">0</span>, <span class="dv">1</span>))</span>
+<span id="cb133-4"><a href="#cb133-4" aria-hidden="true" tabindex="-1"></a><span class="fu">abline</span>(<span class="dv">0</span>, <span class="dv">1</span>, <span class="at">lty =</span> <span class="dv">2</span>, <span class="at">col =</span> <span class="st">"red"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p><img src="climate-classification_files/figure-html/unnamed-chunk-49-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb134"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb134-1"><a href="#cb134-1" aria-hidden="true" tabindex="-1"></a>threshold_qda <span class="ot">&lt;-</span> <span class="fu">seq</span>(<span class="dv">0</span>, <span class="dv">1</span>, <span class="fl">0.01</span>)</span>
+<span id="cb134-2"><a href="#cb134-2" aria-hidden="true" tabindex="-1"></a>TPR_qda <span class="ot">&lt;-</span> FPR_qda <span class="ot">&lt;-</span> err_rate_qda <span class="ot">&lt;-</span> <span class="fu">rep</span>(<span class="dv">0</span>, <span class="fu">length</span>(threshold_qda))</span>
+<span id="cb134-3"><a href="#cb134-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb134-4"><a href="#cb134-4" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> (i <span class="cf">in</span> <span class="fu">seq_along</span>(threshold_qda)) {</span>
+<span id="cb134-5"><a href="#cb134-5" aria-hidden="true" tabindex="-1"></a>  Yhat_qda <span class="ot">&lt;-</span> <span class="fu">ifelse</span>(qda_probs <span class="sc">&gt;=</span> threshold_qda[[i]], positive_class, <span class="st">"Normal"</span>)</span>
+<span id="cb134-6"><a href="#cb134-6" aria-hidden="true" tabindex="-1"></a>  Yhat_qda_factor <span class="ot">&lt;-</span> <span class="fu">factor</span>(Yhat_qda, <span class="at">levels =</span> <span class="fu">c</span>(<span class="st">"Normal"</span>, <span class="st">"Extreme Weather"</span>))</span>
+<span id="cb134-7"><a href="#cb134-7" aria-hidden="true" tabindex="-1"></a>  err_rate_qda[i] <span class="ot">&lt;-</span> <span class="fu">mean</span>(Yhat_qda_factor <span class="sc">!=</span> true_labels)</span>
+<span id="cb134-8"><a href="#cb134-8" aria-hidden="true" tabindex="-1"></a>  TPR_qda[i] <span class="ot">&lt;-</span> <span class="fu">sum</span>(Yhat_qda <span class="sc">==</span> positive_class <span class="sc">&amp;</span> true_labels <span class="sc">==</span> positive_class) <span class="sc">/</span> <span class="fu">sum</span>(true_labels <span class="sc">==</span> positive_class)</span>
+<span id="cb134-9"><a href="#cb134-9" aria-hidden="true" tabindex="-1"></a>  FPR_qda[i] <span class="ot">&lt;-</span> <span class="fu">sum</span>(Yhat_qda <span class="sc">==</span> positive_class <span class="sc">&amp;</span> true_labels <span class="sc">==</span> <span class="st">"Normal"</span>) <span class="sc">/</span> <span class="fu">sum</span>(true_labels <span class="sc">==</span> <span class="st">"Normal"</span>)</span>
+<span id="cb134-10"><a href="#cb134-10" aria-hidden="true" tabindex="-1"></a>}</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb135"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb135-1"><a href="#cb135-1" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(threshold_qda, err_rate_qda, <span class="at">type =</span> <span class="st">"p"</span>, <span class="at">xlab =</span> <span class="st">"Threshold (Probability of Extreme Weather)"</span>, <span class="at">ylab =</span> <span class="st">"Error Rate"</span>,</span>
+<span id="cb135-2"><a href="#cb135-2" aria-hidden="true" tabindex="-1"></a>     <span class="at">main =</span> <span class="st">"QDA: Error Rate vs. Threshold"</span>, <span class="at">pch =</span> <span class="dv">16</span>, <span class="at">cex =</span> <span class="fl">0.8</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p><img src="climate-classification_files/figure-html/unnamed-chunk-51-1.png" class="img-fluid" width="672"></p>
+</div>
+<div class="sourceCode cell-code" id="cb136"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb136-1"><a href="#cb136-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Plot ROC Curve for QDA</span></span>
+<span id="cb136-2"><a href="#cb136-2" aria-hidden="true" tabindex="-1"></a><span class="fu">plot</span>(FPR_qda, TPR_qda, <span class="at">type =</span> <span class="st">"p"</span>, <span class="at">xlab =</span> <span class="st">"False Positive Rate"</span>, <span class="at">ylab =</span> <span class="st">"True Positive Rate"</span>,</span>
+<span id="cb136-3"><a href="#cb136-3" aria-hidden="true" tabindex="-1"></a>     <span class="at">main =</span> <span class="st">"QDA: ROC Curve"</span>, <span class="at">pch =</span> <span class="dv">16</span>, <span class="at">cex =</span> <span class="fl">0.8</span>, <span class="at">xlim =</span> <span class="fu">c</span>(<span class="dv">0</span>, <span class="dv">1</span>), <span class="at">ylim =</span> <span class="fu">c</span>(<span class="dv">0</span>, <span class="dv">1</span>))</span>
+<span id="cb136-4"><a href="#cb136-4" aria-hidden="true" tabindex="-1"></a><span class="fu">abline</span>(<span class="dv">0</span>, <span class="dv">1</span>, <span class="at">lty =</span> <span class="dv">2</span>, <span class="at">col =</span> <span class="st">"red"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p><img src="climate-classification_files/figure-html/unnamed-chunk-51-2.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb137"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb137-1"><a href="#cb137-1" aria-hidden="true" tabindex="-1"></a>best_idx_lda <span class="ot">&lt;-</span> <span class="fu">which.min</span>(err_rate_lda)</span>
+<span id="cb137-2"><a href="#cb137-2" aria-hidden="true" tabindex="-1"></a>best_threshold_lda <span class="ot">&lt;-</span> threshold_lda[best_idx_lda]</span>
+<span id="cb137-3"><a href="#cb137-3" aria-hidden="true" tabindex="-1"></a>best_TPR_lda <span class="ot">&lt;-</span> TPR_lda[best_idx_lda]</span>
+<span id="cb137-4"><a href="#cb137-4" aria-hidden="true" tabindex="-1"></a>best_FPR_lda <span class="ot">&lt;-</span> FPR_lda[best_idx_lda]</span>
+<span id="cb137-5"><a href="#cb137-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb137-6"><a href="#cb137-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb137-7"><a href="#cb137-7" aria-hidden="true" tabindex="-1"></a>best_idx_qda <span class="ot">&lt;-</span> <span class="fu">which.min</span>(err_rate_qda)</span>
+<span id="cb137-8"><a href="#cb137-8" aria-hidden="true" tabindex="-1"></a>best_threshold_qda <span class="ot">&lt;-</span> threshold_qda[best_idx_qda]</span>
+<span id="cb137-9"><a href="#cb137-9" aria-hidden="true" tabindex="-1"></a>best_TPR_qda <span class="ot">&lt;-</span> TPR_qda[best_idx_qda]</span>
+<span id="cb137-10"><a href="#cb137-10" aria-hidden="true" tabindex="-1"></a>best_FPR_qda <span class="ot">&lt;-</span> FPR_qda[best_idx_qda]</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb138"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb138-1"><a href="#cb138-1" aria-hidden="true" tabindex="-1"></a><span class="co"># LDA Results </span></span>
+<span id="cb138-2"><a href="#cb138-2" aria-hidden="true" tabindex="-1"></a>lda_results_df <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
+<span id="cb138-3"><a href="#cb138-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">Metric =</span> <span class="fu">c</span>(<span class="st">"Best Threshold"</span>,</span>
+<span id="cb138-4"><a href="#cb138-4" aria-hidden="true" tabindex="-1"></a>             <span class="st">"TPR at Best Threshold"</span>,</span>
+<span id="cb138-5"><a href="#cb138-5" aria-hidden="true" tabindex="-1"></a>             <span class="st">"FPR at Best Threshold"</span>),</span>
+<span id="cb138-6"><a href="#cb138-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">Value =</span> <span class="fu">c</span>(best_threshold_lda,</span>
+<span id="cb138-7"><a href="#cb138-7" aria-hidden="true" tabindex="-1"></a>            best_TPR_lda,</span>
+<span id="cb138-8"><a href="#cb138-8" aria-hidden="true" tabindex="-1"></a>            best_FPR_lda)</span>
+<span id="cb138-9"><a href="#cb138-9" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb138-10"><a href="#cb138-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb138-11"><a href="#cb138-11" aria-hidden="true" tabindex="-1"></a>lda_results_df</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>                 Metric     Value
+1        Best Threshold 0.6600000
+2 TPR at Best Threshold 0.9365525
+3 FPR at Best Threshold 0.0782332</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb140"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb140-1"><a href="#cb140-1" aria-hidden="true" tabindex="-1"></a><span class="co"># QDA Results </span></span>
+<span id="cb140-2"><a href="#cb140-2" aria-hidden="true" tabindex="-1"></a>qda_results_df <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
+<span id="cb140-3"><a href="#cb140-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">Metric =</span> <span class="fu">c</span>(<span class="st">"Best Threshold"</span>,</span>
+<span id="cb140-4"><a href="#cb140-4" aria-hidden="true" tabindex="-1"></a>             <span class="st">"TPR at Best Threshold"</span>,</span>
+<span id="cb140-5"><a href="#cb140-5" aria-hidden="true" tabindex="-1"></a>             <span class="st">"FPR at Best Threshold"</span>),</span>
+<span id="cb140-6"><a href="#cb140-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">Value =</span> <span class="fu">c</span>(best_threshold_qda,</span>
+<span id="cb140-7"><a href="#cb140-7" aria-hidden="true" tabindex="-1"></a>            best_TPR_qda,</span>
+<span id="cb140-8"><a href="#cb140-8" aria-hidden="true" tabindex="-1"></a>            best_FPR_qda)</span>
+<span id="cb140-9"><a href="#cb140-9" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb140-10"><a href="#cb140-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb140-11"><a href="#cb140-11" aria-hidden="true" tabindex="-1"></a>qda_results_df</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>                 Metric      Value
+1        Best Threshold 0.58000000
+2 TPR at Best Threshold 0.94684634
+3 FPR at Best Threshold 0.06120157</code></pre>
+</div>
+</div>
+<p>After evaluating the models, it seems that QDA performs better. While looking at the ROC curves and error rates, we found that the best threshold for LDA is 0.66 and QDA is 0.58.</p>
+</section>
+<section id="predictions-for-temperature-patterns-using-regression-methods" class="level2">
+<h2 class="anchored" data-anchor-id="predictions-for-temperature-patterns-using-regression-methods">2) Predictions for temperature patterns using Regression Methods</h2>
+</section>
+<section id="linear-regression" class="level2">
+<h2 class="anchored" data-anchor-id="linear-regression">Linear Regression</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb142"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb142-1"><a href="#cb142-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Select Data</span></span>
+<span id="cb142-2"><a href="#cb142-2" aria-hidden="true" tabindex="-1"></a>regression_df <span class="ot">&lt;-</span> weather_clean <span class="sc">%&gt;%</span></span>
+<span id="cb142-3"><a href="#cb142-3" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">select</span>(t2m, month, d2m_f, wind_speed_kmh, msl, sp, tp) <span class="sc">%&gt;%</span></span>
+<span id="cb142-4"><a href="#cb142-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">drop_na</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb143"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb143-1"><a href="#cb143-1" aria-hidden="true" tabindex="-1"></a>lm_model <span class="ot">&lt;-</span> <span class="fu">lm</span>(t2m <span class="sc">~</span> ., <span class="at">data =</span> regression_df)</span>
+<span id="cb143-2"><a href="#cb143-2" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(lm_model)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+Call:
+lm(formula = t2m ~ ., data = regression_df)
+
+Residuals:
+    Min      1Q  Median      3Q     Max 
+-13.644  -1.755  -0.045   1.828  12.022 
+
+Coefficients:
+                 Estimate Std. Error t value Pr(&gt;|t|)    
+(Intercept)     2.652e+02  1.015e+00  261.30   &lt;2e-16 ***
+month          -1.266e-01  1.889e-03  -67.02   &lt;2e-16 ***
+d2m_f           9.653e-02  8.218e-04  117.47   &lt;2e-16 ***
+wind_speed_kmh  1.304e-01  1.345e-03   96.91   &lt;2e-16 ***
+msl            -2.809e-01  4.962e-04 -566.05   &lt;2e-16 ***
+sp              2.839e-01  5.012e-04  566.35   &lt;2e-16 ***
+tp             -2.856e+02  1.185e+01  -24.09   &lt;2e-16 ***
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+Residual standard error: 2.925 on 221873 degrees of freedom
+Multiple R-squared:  0.9165,    Adjusted R-squared:  0.9165 
+F-statistic: 4.061e+05 on 6 and 221873 DF,  p-value: &lt; 2.2e-16</code></pre>
+</div>
+</div>
+<p>The linear regression model achieved a high R² of 0.9165, indicating that over 91% of the variation in temperature (<code>t2m</code>) is explained by the selected predictors. All predictors were statistically significant, and the residual standard error was relatively low at 2.93, suggesting a good overall fit.</p>
+</section>
+<section id="polynomial-regression" class="level2">
+<h2 class="anchored" data-anchor-id="polynomial-regression">Polynomial Regression</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb145"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb145-1"><a href="#cb145-1" aria-hidden="true" tabindex="-1"></a>poly_model <span class="ot">&lt;-</span> <span class="fu">lm</span>(t2m <span class="sc">~</span> <span class="fu">poly</span>(month, <span class="dv">3</span>), <span class="at">data =</span> regression_df)</span>
+<span id="cb145-2"><a href="#cb145-2" aria-hidden="true" tabindex="-1"></a><span class="fu">summary</span>(poly_model)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+Call:
+lm(formula = t2m ~ poly(month, 3), data = regression_df)
+
+Residuals:
+     Min       1Q   Median       3Q      Max 
+-25.8004  -3.9756  -0.0942   3.8774  23.5640 
+
+Coefficients:
+                  Estimate Std. Error t value Pr(&gt;|t|)    
+(Intercept)      2.872e+02  1.249e-02 22990.9   &lt;2e-16 ***
+poly(month, 3)1  1.052e+03  5.884e+00   178.8   &lt;2e-16 ***
+poly(month, 3)2 -3.652e+03  5.884e+00  -620.6   &lt;2e-16 ***
+poly(month, 3)3 -7.843e+02  5.884e+00  -133.3   &lt;2e-16 ***
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
+
+Residual standard error: 5.884 on 221876 degrees of freedom
+Multiple R-squared:  0.6622,    Adjusted R-squared:  0.6622 
+F-statistic: 1.45e+05 on 3 and 221876 DF,  p-value: &lt; 2.2e-16</code></pre>
+</div>
+</div>
+<p>The polynomial regression model used a 3rd-degree transformation of the&nbsp;<code>month</code>&nbsp;variable to model seasonal trends in temperature. While all terms were significant, the R² was lower at 0.6622, and the residual error was larger compared to the full linear model. This suggests that&nbsp;<code>month</code>&nbsp;alone, even with polynomial terms, is insufficient for accurate temperature prediction.</p>
+</section>
+<section id="ridgelasso" class="level2">
+<h2 class="anchored" data-anchor-id="ridgelasso">Ridge/Lasso</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb147"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb147-1"><a href="#cb147-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(glmnet)</span>
+<span id="cb147-2"><a href="#cb147-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb147-3"><a href="#cb147-3" aria-hidden="true" tabindex="-1"></a><span class="co"># Prepare data</span></span>
+<span id="cb147-4"><a href="#cb147-4" aria-hidden="true" tabindex="-1"></a>X <span class="ot">&lt;-</span> <span class="fu">model.matrix</span>(t2m <span class="sc">~</span> ., regression_df)[, <span class="sc">-</span><span class="dv">1</span>]</span>
+<span id="cb147-5"><a href="#cb147-5" aria-hidden="true" tabindex="-1"></a>y <span class="ot">&lt;-</span> regression_df<span class="sc">$</span>t2m</span>
+<span id="cb147-6"><a href="#cb147-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb147-7"><a href="#cb147-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Ridge Regression (alpha = 0)</span></span>
+<span id="cb147-8"><a href="#cb147-8" aria-hidden="true" tabindex="-1"></a>cv_ridge <span class="ot">&lt;-</span> <span class="fu">cv.glmnet</span>(X, y, <span class="at">alpha =</span> <span class="dv">0</span>)</span>
+<span id="cb147-9"><a href="#cb147-9" aria-hidden="true" tabindex="-1"></a>ridge_best_lambda <span class="ot">&lt;-</span> cv_ridge<span class="sc">$</span>lambda.min</span>
+<span id="cb147-10"><a href="#cb147-10" aria-hidden="true" tabindex="-1"></a>ridge_preds <span class="ot">&lt;-</span> <span class="fu">predict</span>(cv_ridge, <span class="at">s =</span> ridge_best_lambda, <span class="at">newx =</span> X)</span>
+<span id="cb147-11"><a href="#cb147-11" aria-hidden="true" tabindex="-1"></a>ridge_rmse <span class="ot">&lt;-</span> <span class="fu">sqrt</span>(<span class="fu">mean</span>((ridge_preds <span class="sc">-</span> y)<span class="sc">^</span><span class="dv">2</span>))</span>
+<span id="cb147-12"><a href="#cb147-12" aria-hidden="true" tabindex="-1"></a>ridge_rmse</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 4.653846</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb149"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb149-1"><a href="#cb149-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Lasso Regression (alpha = 1)</span></span>
+<span id="cb149-2"><a href="#cb149-2" aria-hidden="true" tabindex="-1"></a>cv_lasso <span class="ot">&lt;-</span> <span class="fu">cv.glmnet</span>(X, y, <span class="at">alpha =</span> <span class="dv">1</span>)</span>
+<span id="cb149-3"><a href="#cb149-3" aria-hidden="true" tabindex="-1"></a>lasso_best_lambda <span class="ot">&lt;-</span> cv_lasso<span class="sc">$</span>lambda.min</span>
+<span id="cb149-4"><a href="#cb149-4" aria-hidden="true" tabindex="-1"></a>lasso_preds <span class="ot">&lt;-</span> <span class="fu">predict</span>(cv_lasso, <span class="at">s =</span> lasso_best_lambda, <span class="at">newx =</span> X)</span>
+<span id="cb149-5"><a href="#cb149-5" aria-hidden="true" tabindex="-1"></a>lasso_rmse <span class="ot">&lt;-</span> <span class="fu">sqrt</span>(<span class="fu">mean</span>((lasso_preds <span class="sc">-</span> y)<span class="sc">^</span><span class="dv">2</span>))</span>
+<span id="cb149-6"><a href="#cb149-6" aria-hidden="true" tabindex="-1"></a>lasso_rmse</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 2.938726</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb151"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb151-1"><a href="#cb151-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Coefficients</span></span>
+<span id="cb151-2"><a href="#cb151-2" aria-hidden="true" tabindex="-1"></a><span class="fu">coef</span>(cv_ridge, <span class="at">s =</span> <span class="st">"lambda.min"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>7 x 1 sparse Matrix of class "dgCMatrix"
+                          s1
+(Intercept)     3.103112e+02
+month           1.502869e-02
+d2m_f           4.449462e-01
+wind_speed_kmh  7.656431e-02
+msl            -8.733042e-04
+sp              4.489621e-04
+tp             -1.472486e+03</code></pre>
+</div>
+<div class="sourceCode cell-code" id="cb153"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb153-1"><a href="#cb153-1" aria-hidden="true" tabindex="-1"></a><span class="fu">coef</span>(cv_lasso, <span class="at">s =</span> <span class="st">"lambda.min"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>7 x 1 sparse Matrix of class "dgCMatrix"
+                         s1
+(Intercept)     263.7685249
+month            -0.1206200
+d2m_f             0.1296713
+wind_speed_kmh    0.1319299
+msl              -0.2578833
+sp                0.2606600
+tp             -405.8219062</code></pre>
+</div>
+</div>
+<p>Ridge regression, which shrinks coefficients but retains all predictors, produced an RMSE of 4.65. While this is worse than the linear and lasso models, ridge was likely affected by collinearity among predictors and over-smoothing due to the penalty term.</p>
+<p>Lasso regression yielded the best performance among the penalized methods, with an RMSE of 2.94 — very close to the unregularized linear model. It also performed variable selection, shrinking some coefficients more aggressively (e.g.,&nbsp;<code>tp</code>) while still retaining key predictors, making it a strong choice for both accuracy and interpretability.</p>
+</section>
+<section id="regression-models" class="level2">
+<h2 class="anchored" data-anchor-id="regression-models">Regression Models</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb155"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb155-1"><a href="#cb155-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(glmnet)</span>
+<span id="cb155-2"><a href="#cb155-2" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(ggplot2)</span>
+<span id="cb155-3"><a href="#cb155-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb155-4"><a href="#cb155-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Prepare data</span></span>
+<span id="cb155-5"><a href="#cb155-5" aria-hidden="true" tabindex="-1"></a>regression_df <span class="ot">&lt;-</span> weather_clean <span class="sc">%&gt;%</span></span>
+<span id="cb155-6"><a href="#cb155-6" aria-hidden="true" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">select</span>(t2m, month, d2m_f, wind_speed_kmh, msl, sp, tp) <span class="sc">%&gt;%</span></span>
+<span id="cb155-7"><a href="#cb155-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">drop_na</span>()</span>
+<span id="cb155-8"><a href="#cb155-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb155-9"><a href="#cb155-9" aria-hidden="true" tabindex="-1"></a>X <span class="ot">&lt;-</span> <span class="fu">model.matrix</span>(t2m <span class="sc">~</span> ., regression_df)[, <span class="sc">-</span><span class="dv">1</span>]</span>
+<span id="cb155-10"><a href="#cb155-10" aria-hidden="true" tabindex="-1"></a>y <span class="ot">&lt;-</span> regression_df<span class="sc">$</span>t2m</span>
+<span id="cb155-11"><a href="#cb155-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb155-12"><a href="#cb155-12" aria-hidden="true" tabindex="-1"></a><span class="co"># 1. Linear Regression</span></span>
+<span id="cb155-13"><a href="#cb155-13" aria-hidden="true" tabindex="-1"></a>lm_model <span class="ot">&lt;-</span> <span class="fu">lm</span>(t2m <span class="sc">~</span> ., <span class="at">data =</span> regression_df)</span>
+<span id="cb155-14"><a href="#cb155-14" aria-hidden="true" tabindex="-1"></a>lm_preds <span class="ot">&lt;-</span> <span class="fu">predict</span>(lm_model)</span>
+<span id="cb155-15"><a href="#cb155-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb155-16"><a href="#cb155-16" aria-hidden="true" tabindex="-1"></a><span class="co"># 2. Polynomial Regression (month as poly term)</span></span>
+<span id="cb155-17"><a href="#cb155-17" aria-hidden="true" tabindex="-1"></a>poly_model <span class="ot">&lt;-</span> <span class="fu">lm</span>(t2m <span class="sc">~</span> <span class="fu">poly</span>(month, <span class="dv">3</span>), <span class="at">data =</span> regression_df)</span>
+<span id="cb155-18"><a href="#cb155-18" aria-hidden="true" tabindex="-1"></a>poly_preds <span class="ot">&lt;-</span> <span class="fu">predict</span>(poly_model)</span>
+<span id="cb155-19"><a href="#cb155-19" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb155-20"><a href="#cb155-20" aria-hidden="true" tabindex="-1"></a><span class="co"># 3. Ridge Regression</span></span>
+<span id="cb155-21"><a href="#cb155-21" aria-hidden="true" tabindex="-1"></a>cv_ridge <span class="ot">&lt;-</span> <span class="fu">cv.glmnet</span>(X, y, <span class="at">alpha =</span> <span class="dv">0</span>)</span>
+<span id="cb155-22"><a href="#cb155-22" aria-hidden="true" tabindex="-1"></a>ridge_preds <span class="ot">&lt;-</span> <span class="fu">predict</span>(cv_ridge, <span class="at">s =</span> <span class="st">"lambda.min"</span>, <span class="at">newx =</span> X)</span>
+<span id="cb155-23"><a href="#cb155-23" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb155-24"><a href="#cb155-24" aria-hidden="true" tabindex="-1"></a><span class="co"># 4. Lasso Regression</span></span>
+<span id="cb155-25"><a href="#cb155-25" aria-hidden="true" tabindex="-1"></a>cv_lasso <span class="ot">&lt;-</span> <span class="fu">cv.glmnet</span>(X, y, <span class="at">alpha =</span> <span class="dv">1</span>)</span>
+<span id="cb155-26"><a href="#cb155-26" aria-hidden="true" tabindex="-1"></a>lasso_preds <span class="ot">&lt;-</span> <span class="fu">predict</span>(cv_lasso, <span class="at">s =</span> <span class="st">"lambda.min"</span>, <span class="at">newx =</span> X)</span>
+<span id="cb155-27"><a href="#cb155-27" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb155-28"><a href="#cb155-28" aria-hidden="true" tabindex="-1"></a><span class="co"># Create long-format dataframe for plotting</span></span>
+<span id="cb155-29"><a href="#cb155-29" aria-hidden="true" tabindex="-1"></a>plot_df <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
+<span id="cb155-30"><a href="#cb155-30" aria-hidden="true" tabindex="-1"></a>  <span class="at">Actual =</span> y,</span>
+<span id="cb155-31"><a href="#cb155-31" aria-hidden="true" tabindex="-1"></a>  <span class="at">Linear =</span> lm_preds,</span>
+<span id="cb155-32"><a href="#cb155-32" aria-hidden="true" tabindex="-1"></a>  <span class="at">Polynomial =</span> poly_preds,</span>
+<span id="cb155-33"><a href="#cb155-33" aria-hidden="true" tabindex="-1"></a>  <span class="at">Ridge =</span> <span class="fu">as.vector</span>(ridge_preds),</span>
+<span id="cb155-34"><a href="#cb155-34" aria-hidden="true" tabindex="-1"></a>  <span class="at">Lasso =</span> <span class="fu">as.vector</span>(lasso_preds)</span>
+<span id="cb155-35"><a href="#cb155-35" aria-hidden="true" tabindex="-1"></a>) <span class="sc">%&gt;%</span></span>
+<span id="cb155-36"><a href="#cb155-36" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pivot_longer</span>(<span class="sc">-</span>Actual, <span class="at">names_to =</span> <span class="st">"Model"</span>, <span class="at">values_to =</span> <span class="st">"Predicted"</span>)</span>
+<span id="cb155-37"><a href="#cb155-37" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb155-38"><a href="#cb155-38" aria-hidden="true" tabindex="-1"></a><span class="co"># Plot predicted vs. actual</span></span>
+<span id="cb155-39"><a href="#cb155-39" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(plot_df, <span class="fu">aes</span>(<span class="at">x =</span> Actual, <span class="at">y =</span> Predicted)) <span class="sc">+</span></span>
+<span id="cb155-40"><a href="#cb155-40" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="at">alpha =</span> <span class="fl">0.3</span>, <span class="at">size =</span> <span class="fl">0.8</span>) <span class="sc">+</span></span>
+<span id="cb155-41"><a href="#cb155-41" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_abline</span>(<span class="at">slope =</span> <span class="dv">1</span>, <span class="at">intercept =</span> <span class="dv">0</span>, <span class="at">color =</span> <span class="st">"red"</span>, <span class="at">linetype =</span> <span class="st">"dashed"</span>) <span class="sc">+</span></span>
+<span id="cb155-42"><a href="#cb155-42" aria-hidden="true" tabindex="-1"></a>  <span class="fu">facet_wrap</span>(<span class="sc">~</span>Model, <span class="at">scales =</span> <span class="st">"free"</span>) <span class="sc">+</span></span>
+<span id="cb155-43"><a href="#cb155-43" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Predicted vs. Actual Temperature by Model"</span>,</span>
+<span id="cb155-44"><a href="#cb155-44" aria-hidden="true" tabindex="-1"></a>       <span class="at">x =</span> <span class="st">"Actual Temperature (K)"</span>, <span class="at">y =</span> <span class="st">"Predicted Temperature (K)"</span>) <span class="sc">+</span></span>
+<span id="cb155-45"><a href="#cb155-45" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<p><img src="climate-classification_files/figure-html/unnamed-chunk-58-1.png" class="img-fluid" width="672"></p>
+</div>
+</div>
+</section>
+<section id="evaluation-and-cross-validation" class="level2">
+<h2 class="anchored" data-anchor-id="evaluation-and-cross-validation">Evaluation and Cross Validation</h2>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb156"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb156-1"><a href="#cb156-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Classification model comparison</span></span>
+<span id="cb156-2"><a href="#cb156-2" aria-hidden="true" tabindex="-1"></a>classification_results <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
+<span id="cb156-3"><a href="#cb156-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">Model =</span> <span class="fu">c</span>(<span class="st">"KNN (Unbalanced)"</span>, <span class="st">"KNN (Balanced)"</span>, <span class="st">"Logistic Regression"</span>, <span class="st">"LDA"</span>, <span class="st">"QDA"</span>),</span>
+<span id="cb156-4"><a href="#cb156-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">Accuracy =</span> <span class="fu">c</span>(<span class="fl">0.985</span>, <span class="fl">0.888</span>, <span class="fl">0.064</span>, <span class="fl">0.9197</span>, <span class="fl">0.9399</span>),</span>
+<span id="cb156-5"><a href="#cb156-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">Balanced_Accuracy =</span> <span class="fu">c</span>(<span class="fl">0.50</span>, <span class="cn">NA</span>, <span class="cn">NA</span>, <span class="cn">NA</span>, <span class="cn">NA</span>),</span>
+<span id="cb156-6"><a href="#cb156-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">Notes =</span> <span class="fu">c</span>(</span>
+<span id="cb156-7"><a href="#cb156-7" aria-hidden="true" tabindex="-1"></a>    <span class="st">"Overestimates due to class imbalance"</span>,</span>
+<span id="cb156-8"><a href="#cb156-8" aria-hidden="true" tabindex="-1"></a>    <span class="st">"More realistic; tuned with CV"</span>,</span>
+<span id="cb156-9"><a href="#cb156-9" aria-hidden="true" tabindex="-1"></a>    <span class="st">"Underperforms despite significance"</span>,</span>
+<span id="cb156-10"><a href="#cb156-10" aria-hidden="true" tabindex="-1"></a>    <span class="st">"Strong separation with linear boundaries"</span>,</span>
+<span id="cb156-11"><a href="#cb156-11" aria-hidden="true" tabindex="-1"></a>    <span class="st">"Best classifier; handles non-linearity"</span></span>
+<span id="cb156-12"><a href="#cb156-12" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb156-13"><a href="#cb156-13" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb156-14"><a href="#cb156-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb156-15"><a href="#cb156-15" aria-hidden="true" tabindex="-1"></a>knitr<span class="sc">::</span><span class="fu">kable</span>(classification_results, <span class="at">caption =</span> <span class="st">"Classification Model Comparison"</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output-display">
+<table class="table table-sm table-striped small">
+<caption>Classification Model Comparison</caption>
+<colgroup>
+<col style="width: 22%">
+<col style="width: 10%">
+<col style="width: 20%">
+<col style="width: 46%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">Model</th>
+<th style="text-align: right;">Accuracy</th>
+<th style="text-align: right;">Balanced_Accuracy</th>
+<th style="text-align: left;">Notes</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">KNN (Unbalanced)</td>
+<td style="text-align: right;">0.9850</td>
+<td style="text-align: right;">0.5</td>
+<td style="text-align: left;">Overestimates due to class imbalance</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">KNN (Balanced)</td>
+<td style="text-align: right;">0.8880</td>
+<td style="text-align: right;">NA</td>
+<td style="text-align: left;">More realistic; tuned with CV</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">Logistic Regression</td>
+<td style="text-align: right;">0.0640</td>
+<td style="text-align: right;">NA</td>
+<td style="text-align: left;">Underperforms despite significance</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">LDA</td>
+<td style="text-align: right;">0.9197</td>
+<td style="text-align: right;">NA</td>
+<td style="text-align: left;">Strong separation with linear boundaries</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">QDA</td>
+<td style="text-align: right;">0.9399</td>
+<td style="text-align: right;">NA</td>
+<td style="text-align: left;">Best classifier; handles non-linearity</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="sourceCode cell-code" id="cb157"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb157-1"><a href="#cb157-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Regression model comparison</span></span>
+<span id="cb157-2"><a href="#cb157-2" aria-hidden="true" tabindex="-1"></a>regression_results <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
+<span id="cb157-3"><a href="#cb157-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">Model =</span> <span class="fu">c</span>(<span class="st">"Linear Regression"</span>, <span class="st">"Polynomial Regression"</span>, <span class="st">"Ridge Regression"</span>, <span class="st">"Lasso Regression"</span>),</span>
+<span id="cb157-4"><a href="#cb157-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">RMSE =</span> <span class="fu">c</span>(<span class="fl">2.93</span>, <span class="fl">5.88</span>, <span class="fl">4.65</span>, <span class="fl">2.94</span>),</span>
+<span id="cb157-5"><a href="#cb157-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">Adjusted_R2 =</span> <span class="fu">c</span>(<span class="fl">0.9165</span>, <span class="fl">0.6622</span>, <span class="cn">NA</span>, <span class="cn">NA</span>),</span>
+<span id="cb157-6"><a href="#cb157-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">Notes =</span> <span class="fu">c</span>(</span>
+<span id="cb157-7"><a href="#cb157-7" aria-hidden="true" tabindex="-1"></a>    <span class="st">"Best overall fit; all predictors significant"</span>,</span>
+<span id="cb157-8"><a href="#cb157-8" aria-hidden="true" tabindex="-1"></a>    <span class="st">"Captures seasonality; limited features"</span>,</span>
+<span id="cb157-9"><a href="#cb157-9" aria-hidden="true" tabindex="-1"></a>    <span class="st">"Regularized; retains all predictors"</span>,</span>
+<span id="cb157-10"><a href="#cb157-10" aria-hidden="true" tabindex="-1"></a>    <span class="st">"Sparse solution; similar to linear"</span></span>
+<span id="cb157-11"><a href="#cb157-11" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb157-12"><a href="#cb157-12" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb157-13"><a href="#cb157-13" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb157-14"><a href="#cb157-14" aria-hidden="true" tabindex="-1"></a>regression_results</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>                  Model RMSE Adjusted_R2
+1     Linear Regression 2.93      0.9165
+2 Polynomial Regression 5.88      0.6622
+3      Ridge Regression 4.65          NA
+4      Lasso Regression 2.94          NA
+                                         Notes
+1 Best overall fit; all predictors significant
+2       Captures seasonality; limited features
+3          Regularized; retains all predictors
+4           Sparse solution; similar to linear</code></pre>
+</div>
+</div>
+<p>We evaluated multiple classification methods to predict extreme weather events, including K-Nearest Neighbors (KNN), logistic regression, LDA, and QDA. KNN initially appeared highly accurate (&gt;98%), but deeper inspection revealed this was due to severe class imbalance. After balancing the data, KNN’s performance became more realistic, achieving ~88% accuracy and a balanced accuracy of 0.5. Logistic regression struggled even after rebalancing, with only 6.4% accuracy, indicating it could not capture complex decision boundaries. LDA and QDA, by contrast, performed significantly better, with classification accuracies of 91.97% and 93.99% respectively, showing that distribution-based models can better handle the underlying structure of extreme weather classification. Cross-validation was used to select the optimal number of neighbors in KNN and to ensure fair model comparison. These results highlight the importance of both class balance and cross-validation in evaluating classifier performance in imbalanced real-world datasets.</p>
+<p>To evaluate model performance, we used RMSE (Root Mean Squared Error) and adjusted R² across four regression approaches: linear, polynomial, ridge, and lasso. The standard linear model performed best overall, with an adjusted R² of 0.9165 and a low residual error, indicating a strong linear relationship between temperature and the selected predictors. Polynomial regression, despite modeling seasonal trends with&nbsp;<code>month</code>, showed weaker performance due to its limited feature scope. Ridge regression used cross-validation to select the optimal penalty parameter (<code>λ</code>), but still underperformed with an RMSE of 4.65. Lasso regression also used cross-validation for tuning and achieved a much lower RMSE of 2.94 by automatically selecting relevant features. These results underscore the effectiveness of regularized models when handling collinearity or when model simplicity is preferred. Cross-validation played a key role in objectively comparing flexibility and prediction error, helping avoid overfitting.</p>
+</section>
+</section>
+
+</main>
+<!-- /main column -->
+<script id="quarto-html-after-body" type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const toggleBodyColorMode = (bsSheetEl) => {
+    const mode = bsSheetEl.getAttribute("data-mode");
+    const bodyEl = window.document.querySelector("body");
+    if (mode === "dark") {
+      bodyEl.classList.add("quarto-dark");
+      bodyEl.classList.remove("quarto-light");
+    } else {
+      bodyEl.classList.add("quarto-light");
+      bodyEl.classList.remove("quarto-dark");
+    }
+  }
+  const toggleBodyColorPrimary = () => {
+    const bsSheetEl = window.document.querySelector("link#quarto-bootstrap");
+    if (bsSheetEl) {
+      toggleBodyColorMode(bsSheetEl);
+    }
+  }
+  toggleBodyColorPrimary();  
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const isCodeAnnotation = (el) => {
+    for (const clz of el.classList) {
+      if (clz.startsWith('code-annotation-')) {                     
+        return true;
+      }
+    }
+    return false;
+  }
+  const clipboard = new window.ClipboardJS('.code-copy-button', {
+    text: function(trigger) {
+      const codeEl = trigger.previousElementSibling.cloneNode(true);
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+  });
+  clipboard.on('success', function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    var currentTitle = button.getAttribute("title");
+    button.setAttribute("title", "Copied!");
+    let tooltip;
+    if (window.bootstrap) {
+      button.setAttribute("data-bs-toggle", "tooltip");
+      button.setAttribute("data-bs-placement", "left");
+      button.setAttribute("data-bs-title", "Copied!");
+      tooltip = new bootstrap.Tooltip(button, 
+        { trigger: "manual", 
+          customClass: "code-copy-button-tooltip",
+          offset: [0, -8]});
+      tooltip.show();    
+    }
+    setTimeout(function() {
+      if (tooltip) {
+        tooltip.hide();
+        button.removeAttribute("data-bs-title");
+        button.removeAttribute("data-bs-toggle");
+        button.removeAttribute("data-bs-placement");
+      }
+      button.setAttribute("title", currentTitle);
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  });
+  function tippyHover(el, contentFn) {
+    const config = {
+      allowHTML: true,
+      content: contentFn,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start'
+    };
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      // use id or data attribute instead here
+      let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      return note.innerHTML;
+    });
+  }
+      let selectedAnnoteEl;
+      const selectorForAnnotation = ( cell, annotation) => {
+        let cellAttr = 'data-code-cell="' + cell + '"';
+        let lineAttr = 'data-code-annotation="' +  annotation + '"';
+        const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+        return selector;
+      }
+      const selectCodeLines = (annoteEl) => {
+        const doc = window.document;
+        const targetCell = annoteEl.getAttribute("data-target-cell");
+        const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+        const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+        const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+        const lineIds = lines.map((line) => {
+          return targetCell + "-" + line;
+        })
+        let top = null;
+        let height = null;
+        let parent = null;
+        if (lineIds.length > 0) {
+            //compute the position of the single el (top and bottom and make a div)
+            const el = window.document.getElementById(lineIds[0]);
+            top = el.offsetTop;
+            height = el.offsetHeight;
+            parent = el.parentElement.parentElement;
+          if (lineIds.length > 1) {
+            const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+            const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+            height = bottom - top;
+          }
+          if (top !== null && height !== null && parent !== null) {
+            // cook up a div (if necessary) and position it 
+            let div = window.document.getElementById("code-annotation-line-highlight");
+            if (div === null) {
+              div = window.document.createElement("div");
+              div.setAttribute("id", "code-annotation-line-highlight");
+              div.style.position = 'absolute';
+              parent.appendChild(div);
+            }
+            div.style.top = top - 2 + "px";
+            div.style.height = height + 4 + "px";
+            let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+            if (gutterDiv === null) {
+              gutterDiv = window.document.createElement("div");
+              gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+              gutterDiv.style.position = 'absolute';
+              const codeCell = window.document.getElementById(targetCell);
+              const gutter = codeCell.querySelector('.code-annotation-gutter');
+              gutter.appendChild(gutterDiv);
+            }
+            gutterDiv.style.top = top - 2 + "px";
+            gutterDiv.style.height = height + 4 + "px";
+          }
+          selectedAnnoteEl = annoteEl;
+        }
+      };
+      const unselectCodeLines = () => {
+        const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+        elementsIds.forEach((elId) => {
+          const div = window.document.getElementById(elId);
+          if (div) {
+            div.remove();
+          }
+        });
+        selectedAnnoteEl = undefined;
+      };
+      // Attach click handler to the DT
+      const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+      for (const annoteDlNode of annoteDls) {
+        annoteDlNode.addEventListener('click', (event) => {
+          const clickedEl = event.target;
+          if (clickedEl !== selectedAnnoteEl) {
+            unselectCodeLines();
+            const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+            if (activeEl) {
+              activeEl.classList.remove('code-annotation-active');
+            }
+            selectCodeLines(clickedEl);
+            clickedEl.classList.add('code-annotation-active');
+          } else {
+            // Unselect the line
+            unselectCodeLines();
+            clickedEl.classList.remove('code-annotation-active');
+          }
+        });
+      }
+  const findCites = (el) => {
+    const parentEl = el.parentElement;
+    if (parentEl) {
+      const cites = parentEl.dataset.cites;
+      if (cites) {
+        return {
+          el,
+          cites: cites.split(' ')
+        };
+      } else {
+        return findCites(el.parentElement)
+      }
+    } else {
+      return undefined;
+    }
+  };
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const citeInfo = findCites(ref);
+    if (citeInfo) {
+      tippyHover(citeInfo.el, function() {
+        var popup = window.document.createElement('div');
+        citeInfo.cites.forEach(function(cite) {
+          var citeDiv = window.document.createElement('div');
+          citeDiv.classList.add('hanging-indent');
+          citeDiv.classList.add('csl-entry');
+          var biblioDiv = window.document.getElementById('ref-' + cite);
+          if (biblioDiv) {
+            citeDiv.innerHTML = biblioDiv.innerHTML;
+          }
+          popup.appendChild(citeDiv);
+        });
+        return popup.innerHTML;
+      });
+    }
+  }
+});
+</script>
+</div> <!-- /content -->
+
+
+
+</body></html>
