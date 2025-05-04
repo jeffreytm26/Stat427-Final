@@ -100,9 +100,19 @@ Each member attended group meetings and contributed to data cleaning, explorator
 ## Summary:
 This project aims to analyze and predict temperature trends over time using historical climate data from Washington, D.C. By leveraging regression and classification models, we will examine climate change indicators and their potential implications for energy consumption and environmental policies. The final deliverable will be a poster presentation summarizing our findings, methodologies, and key takeaways.
 
+##Directory:
+- analysis: Contains our analysis in R
+   -   climate-classification.qmd : main R file with evaluation, models, evaluation
+   -   climate.html : rendered html file
+     
+- data: Contains our dataset
+  - Climate-Data.csv : updated dataset from 2000-2025 with DC coordinates
+  - ClimateData.csv : original dataset from 1940-2025 with swapped lat and long coords (set in Antarctica)
+  - README.md : You are here!
+  - STAT427-Poster.pptx.pdf : Poster with findings
+  - STAT427_FinalProject-Recording : Video Recording Presenting our Poster
+
 ## Resources:
-- [Colab Notebook](https://colab.research.google.com/drive/1sFhR1B26EtbTbF4ouGBy4toRI2TJ62oe#scrollTo=xaxJRHKJB9lb)
-- [Dataset](https://drive.google.com/drive/folders/1ouyBSH6JXSKIXAcp1TaFw2Tzw8jmceKb?usp=drive_link)
 - [CDS Datasets](https://cds.climate.copernicus.eu/datasets)
 - [Dataset Overview](https://cds.climate.copernicus.eu/datasets/reanalysis-era5-single-levels-timeseries?tab=overview)
 - [Dataset Documentation](https://confluence.ecmwf.int/pages/viewpage.action?pageId=505390919)
