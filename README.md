@@ -94,6 +94,7 @@ The final deliverable will be a **poster presentation** summarizing our findings
 We used this Github Repo as a shared place to commit all of our changes throughout the project. We initially worked on a Colab notebook, and then migrated our changes here for more efficiency
 - Gracie - Exploratory Analysis + Classification (KNN, LDA/QDA, Logistic Reg & Evaluation)
 - Jeffrey - Regression (Linear Reg, Polynomial, Ridge/LASSO) + Evaluation/CV
+- Luke - Regression Analysis for potential third question of interest (not included in final deliverable due to poor results), Poster development
 
 Each member attended group meetings and contributed to data cleaning, exploratory research, and model development. We then put together our poster with our findings.
 
