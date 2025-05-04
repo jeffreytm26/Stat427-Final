@@ -1,13 +1,13 @@
 ---
-title: "sml-climate-eda"
-author: "Gracie Abrahams"
+title: "Predicting Temperature Changes Over Time to Indicate Climate Trends"
+author: "Gracie Abrahams, Jeffrey Mann, Luke Carignan"
 format: html
 editor: visual
 ---
 
-# Climate Change Through Classification Modeling
+# Predicting Temperature Changes Over Time to Indicate Climate Trends
 
-## Can we classify extreme weather events using machine learning?
+## 1) Can we classify extreme weather events using machine learning?
 
 Load necessary packages.
 
@@ -820,6 +820,8 @@ qda_results_df
 
 After evaluating the models, it seems that QDA performs better. While looking at the ROC curves and error rates, we found that the best threshold for LDA is 0.66 and QDA is 0.58.
 
+## 2) Predictions for temperature patterns using Regression Methods
+
 ## Linear Regression
 
 ```{r}
@@ -961,7 +963,7 @@ regression_results <- data.frame(
   )
 )
 
-kable(regression_results, caption = "Regression Model Comparison")
+regression_results
 ```
 
 We evaluated multiple classification methods to predict extreme weather events, including K-Nearest Neighbors (KNN), logistic regression, LDA, and QDA. KNN initially appeared highly accurate (\>98%), but deeper inspection revealed this was due to severe class imbalance. After balancing the data, KNN's performance became more realistic, achieving \~88% accuracy and a balanced accuracy of 0.5. Logistic regression struggled even after rebalancing, with only 6.4% accuracy, indicating it could not capture complex decision boundaries. LDA and QDA, by contrast, performed significantly better, with classification accuracies of 91.97% and 93.99% respectively, showing that distribution-based models can better handle the underlying structure of extreme weather classification. Cross-validation was used to select the optimal number of neighbors in KNN and to ensure fair model comparison. These results highlight the importance of both class balance and cross-validation in evaluating classifier performance in imbalanced real-world datasets.
