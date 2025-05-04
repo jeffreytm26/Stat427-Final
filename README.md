@@ -91,10 +91,11 @@ The final deliverable will be a **poster presentation** summarizing our findings
 | Week 14 | Final review, model touch-ups, poster creation | Completed code, poster, and presentation practice |
 
 ## Group Member Responsibilities:
-We created a shared Google Colab notebook:  
-[Google Colab Notebook](https://colab.research.google.com/drive/1sFhR1B26EtbTbF4ouGBy4toRI2TJ62oe?usp=sharing)
+We used this Github Repo as a shared place to commit all of our changes throughout the project. We initially worked on a Colab notebook, and then migrated our changes here for more efficiency
+Gracie - Exploratory Analysis + Classification (KNN, LDA/QDA, Logistic Reg & Evaluation)
+Jeffrey - Regression (Linear Reg, Polynomial, Ridge/LASSO) + Evaluation/CV
 
-Each member will attend group meetings and contribute to data cleaning, exploratory research, and model development.
+Each member attended group meetings and contributed to data cleaning, exploratory research, and model development. We then put together our poster with our findings.
 
 ## Summary:
 This project aims to analyze and predict temperature trends over time using historical climate data from Washington, D.C. By leveraging regression and classification models, we will examine climate change indicators and their potential implications for energy consumption and environmental policies. The final deliverable will be a poster presentation summarizing our findings, methodologies, and key takeaways.
