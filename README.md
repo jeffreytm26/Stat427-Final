@@ -11,15 +11,15 @@ Our dataset comes from the Climate Change Service (CS3), specifically the ERA5 h
 
 ### Questions of Interest
 #### Regression Analysis:
-- Predicting future temperature patterns based on past weather data.
+- Predicting future temperature patterns based on past weather data. **
 - Estimating precipitation (tp) using temperature, pressure, and wind speed.
 - Modeling wind speed (u10, v10) from other weather variables.
 
 #### Classification Analysis:
-- Classifying extreme weather events (e.g., heavy rain, high winds, extreme heat).
+- Classifying extreme weather events (e.g., heavy rain, high winds, extreme heat). **
 - Determining whether an hour is classified as rainy vs. dry based on weather conditions.
 
-Additional research questions may emerge as we further explore the dataset.
+Starred questions were the final questions we modeled.
 
 ## Planned Approach
 ### Literature Review:
