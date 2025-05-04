@@ -30,7 +30,6 @@ library(GGally)
 ## Exploratory Data Analysis
 
 ```{r}
-setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
 climate_data <- read.csv("../data/Climate-Data.csv")
 head(climate_data)
 ```
@@ -723,7 +722,7 @@ qda_probs <- predict(qda_model, newdata = balanced_df)$posterior[, "Extreme Weat
 ```
 
 ```{r}
-# True labels (ensure they are treated as factors for comparison)
+
 true_labels <- factor(balanced_df$extreme_weather_binary, levels = c("Normal", "Extreme Weather"))
 positive_class <- "Extreme Weather"
 
@@ -776,6 +775,21 @@ plot(threshold_qda, err_rate_qda, type = "p", xlab = "Threshold (Probability of 
 plot(FPR_qda, TPR_qda, type = "p", xlab = "False Positive Rate", ylab = "True Positive Rate",
      main = "QDA: ROC Curve", pch = 16, cex = 0.8, xlim = c(0, 1), ylim = c(0, 1))
 abline(0, 1, lty = 2, col = "red")
+```
+
+```{r}
+
+best_idx_lda <- which.min(err_rate_lda)
+best_threshold_lda <- threshold_lda[best_idx_lda]
+best_TPR_lda <- TPR_lda[best_idx_lda]
+best_FPR_lda <- FPR_lda[best_idx_lda]
+
+
+best_idx_qda <- which.min(err_rate_qda)
+best_threshold_qda <- threshold_qda[best_idx_qda]
+best_TPR_qda <- TPR_qda[best_idx_qda]
+best_FPR_qda <- FPR_qda[best_idx_qda]
+
 ```
 
 ```{r}
