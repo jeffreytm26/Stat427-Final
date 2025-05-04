@@ -108,9 +108,9 @@ This project aims to analyze and predict temperature trends over time using hist
 - data: Contains our dataset
   - Climate-Data.csv : updated dataset from 2000-2025 with DC coordinates
   - ClimateData.csv : original dataset from 1940-2025 with swapped lat and long coords (set in Antarctica)
-  - README.md : You are here!
-  - STAT427-Poster.pptx.pdf : Poster with findings
-  - STAT427_FinalProject-Recording : Video Recording Presenting our Poster
+- README.md : You are here!
+- STAT427-Poster.pptx.pdf : Poster with findings
+- STAT427_FinalProject-Recording : Video Recording Presenting our Poster
 
 ## Resources:
 - [CDS Datasets](https://cds.climate.copernicus.eu/datasets)
